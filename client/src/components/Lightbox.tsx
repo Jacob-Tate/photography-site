@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { ImageInfo } from '../api/client';
 import DownloadButton from './DownloadButton';
 import ShareButton from './ShareButton';
+import Histogram from './Histogram';
 
 interface LightboxProps {
   image: ImageInfo;
@@ -364,6 +365,10 @@ export default function Lightbox({
           {/* Expanded details */}
           {showFullExif && (
             <div className="mt-2 pt-2 border-t border-white/20 space-y-1">
+              {/* Luminosity histogram */}
+              <div className="pb-1 mb-1 border-b border-white/10">
+                <Histogram imageUrl={image.fullUrl} />
+              </div>
               {/* Dimensions row */}
               {image.exif.dimensions && (
                 <div className="flex justify-between text-white/70">
