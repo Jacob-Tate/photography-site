@@ -22,7 +22,7 @@ function validatePath(reqPath: string): string | null {
 // GET /api/images/thumbnail/*
 router.get('/thumbnail/*', async (req, res) => {
   try {
-    const relativePath = (req.params as Record<string, string>)[0];
+    const relativePath = (req.params as unknown as Record<string, string>)[0];
     const absPath = validatePath(relativePath);
 
     if (!absPath) {
@@ -40,7 +40,7 @@ router.get('/thumbnail/*', async (req, res) => {
 
 // GET /api/images/full/*
 router.get('/full/*', (req, res) => {
-  const relativePath = (req.params as Record<string, string>)[0];
+  const relativePath = (req.params as unknown as Record<string, string>)[0];
   const absPath = validatePath(relativePath);
 
   if (!absPath) {
@@ -53,7 +53,7 @@ router.get('/full/*', (req, res) => {
 
 // GET /api/images/download/*
 router.get('/download/*', (req, res) => {
-  const relativePath = (req.params as Record<string, string>)[0];
+  const relativePath = (req.params as unknown as Record<string, string>)[0];
   const absPath = validatePath(relativePath);
 
   if (!absPath) {

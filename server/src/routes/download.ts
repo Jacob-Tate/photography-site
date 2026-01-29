@@ -10,7 +10,7 @@ const router = Router();
 // GET /api/download/album/*
 router.get('/album/*', (req, res) => {
   try {
-    const albumRelPath = (req.params as Record<string, string>)[0];
+    const albumRelPath = (req.params as unknown as Record<string, string>)[0];
     const resolved = path.resolve(ALBUMS_DIR, albumRelPath);
 
     if (!resolved.startsWith(ALBUMS_DIR)) {

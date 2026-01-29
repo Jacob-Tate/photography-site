@@ -22,7 +22,7 @@ router.get('/', (_req, res) => {
 // GET /api/albums/* - group or album detail
 router.get('/*', async (req, res) => {
   try {
-    const pathStr = (req.params as Record<string, string>)[0];
+    const pathStr = (req.params as unknown as Record<string, string>)[0];
     const albumPath = 'albums/' + pathStr;
 
     // Validate path traversal
