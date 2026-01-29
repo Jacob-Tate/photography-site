@@ -144,21 +144,22 @@ export default function Lightbox({
   }, [isZoomed, isDragging, handleZoom]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 0 && touchStartRef.current && !isZoomed) {
+    if (e.touches.length === 0 && touchStartRef.current) {
       const touch = e.changedTouches[0];
       const dx = touch.clientX - touchStartRef.current.x;
       const dy = touch.clientY - touchStartRef.current.y;
       const dt = Date.now() - touchStartRef.current.time;
+      const isTap = dt < 200 && Math.abs(dx) < 10 && Math.abs(dy) < 10;
 
-      // Swipe detection (min 50px, max 300ms)
-      if (dt < 300 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      // Swipe detection (min 50px, max 300ms) - only when not zoomed
+      if (!isZoomed && dt < 300 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
         if (dx > 0 && hasPrev) {
           onPrev();
         } else if (dx < 0 && hasNext) {
           onNext();
         }
-      } else if (dt < 200 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-        // Tap to toggle controls
+      } else if (isTap) {
+        // Tap to toggle controls (works when zoomed too)
         setShowControls(prev => !prev);
       }
     }
