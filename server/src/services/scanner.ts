@@ -263,7 +263,7 @@ async function getImageMetadata(filePath: string): Promise<{ width: number; heig
   return { width, height, exif: hasData ? exif : undefined };
 }
 
-function listImageFiles(dir: string): string[] {
+export function listImageFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
     .filter(f => isImageFile(f) && !f.startsWith('.'))

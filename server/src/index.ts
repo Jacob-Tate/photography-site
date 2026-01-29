@@ -12,6 +12,7 @@ import uploadRouter from './routes/upload';
 import manageRouter from './routes/manage';
 import mapRouter from './routes/map';
 import searchRouter from './routes/search';
+import { preGenerateThumbnails } from './services/thumbnailQueue';
 
 const app = express();
 
@@ -45,4 +46,5 @@ app.get('*', (_req, res) => {
 app.listen(config.port, () => {
   console.log(`Server running on http://localhost:${config.port}`);
   console.log(`Photos directory: ${config.photosDir}`);
+  preGenerateThumbnails();
 });
