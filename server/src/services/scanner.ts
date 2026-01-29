@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import exifReader from 'exif-reader';
+import iptcReader from 'iptc-reader';
 import { IMAGE_EXTENSIONS, PORTFOLIO_DIR, ALBUMS_DIR } from '../config';
 import { ImageInfo, AlbumInfo, GroupInfo, AlbumTree, ExifData } from '../types';
 
@@ -46,6 +47,67 @@ async function getImageMetadata(filePath: string): Promise<{ width: number; heig
 
   // Start with dimension info (always available)
   const exif: ExifData = {};
+
+  // Extract keywords from IPTC
+  if (metadata.iptc) {
+    try {
+      const iptc = iptcReader(metadata.iptc);
+      if (iptc.keywords) {
+        // Keywords can be a string (single) or array (multiple)
+        if (Array.isArray(iptc.keywords)) {
+          if (iptc.keywords.length > 0) {
+            exif.keywords = iptc.keywords;
+          }
+        } else if (typeof iptc.keywords === 'string' && iptc.keywords.length > 0) {
+          exif.keywords = [iptc.keywords];
+        }
+      }
+    } catch {
+      // IPTC parsing failed, continue without keywords
+    }
+  }
+
+  // Extract keywords from XMP (used by Lightroom, Photoshop, etc.)
+  if (!exif.keywords && metadata.xmp) {
+    try {
+      const xmpString = metadata.xmp.toString('utf8');
+      // Parse dc:subject tags which contain keywords
+      // Format: <dc:subject><rdf:Bag><rdf:li>keyword</rdf:li>...</rdf:Bag></dc:subject>
+      // Or: <dc:subject><rdf:Seq><rdf:li>keyword</rdf:li>...</rdf:Seq></dc:subject>
+      const subjectMatch = xmpString.match(/<dc:subject[^>]*>([\s\S]*?)<\/dc:subject>/i);
+      if (subjectMatch) {
+        const keywords: string[] = [];
+        const liRegex = /<rdf:li[^>]*>([^<]+)<\/rdf:li>/gi;
+        let match;
+        while ((match = liRegex.exec(subjectMatch[1])) !== null) {
+          keywords.push(match[1].trim());
+        }
+        if (keywords.length > 0) {
+          exif.keywords = keywords;
+        }
+      }
+
+      // Also try lr:hierarchicalSubject for Lightroom hierarchical keywords
+      if (!exif.keywords) {
+        const lrMatch = xmpString.match(/<lr:hierarchicalSubject[^>]*>([\s\S]*?)<\/lr:hierarchicalSubject>/i);
+        if (lrMatch) {
+          const keywords: string[] = [];
+          const liRegex = /<rdf:li[^>]*>([^<]+)<\/rdf:li>/gi;
+          let match;
+          while ((match = liRegex.exec(lrMatch[1])) !== null) {
+            // Hierarchical keywords use | as separator, take the last part
+            const parts = match[1].split('|');
+            keywords.push(parts[parts.length - 1].trim());
+          }
+          if (keywords.length > 0) {
+            exif.keywords = [...new Set(keywords)]; // Remove duplicates
+          }
+        }
+      }
+    } catch {
+      // XMP parsing failed, continue without keywords
+    }
+  }
 
   if (width && height) {
     exif.dimensions = `${width} × ${height}`;

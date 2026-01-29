@@ -417,6 +417,21 @@ export default function Lightbox({
                   </a>
                 </div>
               )}
+              {image.exif.keywords && image.exif.keywords.length > 0 && (
+                <div className="text-white/70 pt-1">
+                  <span className="block mb-1">Keywords</span>
+                  <div className="flex flex-wrap gap-1">
+                    {image.exif.keywords.map((keyword, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-white/10 text-white/90 px-2 py-0.5 rounded text-xs"
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
