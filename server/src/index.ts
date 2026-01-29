@@ -10,6 +10,7 @@ import downloadRouter from './routes/download';
 import authRouter from './routes/auth';
 import uploadRouter from './routes/upload';
 import manageRouter from './routes/manage';
+import mapRouter from './routes/map';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/download', downloadRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/manage', manageRouter);
+app.use('/api/map', mapRouter);
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '../../client/dist');

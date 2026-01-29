@@ -107,3 +107,14 @@ export async function unlockAlbum(albumPath: string, password: string): Promise<
   });
   return res.json();
 }
+
+export interface MapImage extends ImageInfo {
+  albumName?: string;
+  albumPath?: string;
+}
+
+export async function fetchMapImages(): Promise<{ images: MapImage[] }> {
+  const res = await fetch('/api/map');
+  if (!res.ok) throw new Error('Failed to fetch map data');
+  return res.json();
+}

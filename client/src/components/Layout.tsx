@@ -23,6 +23,14 @@ export default function Layout() {
           >
             Albums
           </Link>
+          <Link
+            to="/map"
+            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center ${
+              location.pathname === '/map' ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
+            } transition-colors`}
+          >
+            Map
+          </Link>
         </div>
       </nav>
       <main className="pt-14 sm:pt-16 safe-bottom">

@@ -149,3 +149,69 @@ body {
 .prose input[type="checkbox"] {
   @apply mt-1.5 h-4 w-4 rounded border-neutral-600 bg-neutral-800;
 }
+
+/* Map styles */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 1;
+}
+
+.custom-cluster {
+  background: transparent;
+}
+
+.custom-cluster .cluster-icon {
+  @apply bg-white text-neutral-900 font-bold rounded-full flex items-center justify-center shadow-lg;
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+}
+
+.photo-popup .leaflet-popup-content-wrapper {
+  @apply bg-neutral-900 text-white rounded-lg shadow-xl p-0 overflow-hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.photo-popup .leaflet-popup-content {
+  margin: 0;
+  min-width: 150px;
+}
+
+.photo-popup .leaflet-popup-tip {
+  @apply bg-neutral-900;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marker-popup {
+  display: flex;
+  flex-direction: column;
+}
+
+.marker-popup img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+}
+
+.marker-popup .popup-info {
+  @apply px-2 py-1.5 text-xs text-white/80 truncate;
+  max-width: 150px;
+}
+
+/* Leaflet control overrides for dark theme */
+.leaflet-control-zoom a {
+  @apply bg-neutral-800 text-white border-neutral-700;
+}
+
+.leaflet-control-zoom a:hover {
+  @apply bg-neutral-700 text-white;
+}
+
+.leaflet-control-attribution {
+  @apply bg-black/60 text-white/50 text-xs;
+}
+
+.leaflet-control-attribution a {
+  @apply text-white/60;
+}
