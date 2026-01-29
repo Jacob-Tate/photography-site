@@ -6,7 +6,6 @@ import GroupPage from './pages/GroupPage';
 import AlbumPage from './pages/AlbumPage';
 import MapPage from './pages/MapPage';
 import SearchPage from './pages/SearchPage';
-
 export default function App() {
   return (
     <Routes>

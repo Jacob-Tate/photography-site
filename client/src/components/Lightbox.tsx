@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { ImageInfo } from '../api/client';
 import DownloadButton from './DownloadButton';
+import ShareButton from './ShareButton';
 
 interface LightboxProps {
   image: ImageInfo;
@@ -240,6 +241,7 @@ export default function Lightbox({
 
         {/* Right controls */}
         <div className="flex items-center gap-1 sm:gap-2">
+          <ShareButton type="image" targetPath={image.path} compact />
           <DownloadButton url={image.downloadUrl} filename={image.filename} />
           <button
             onClick={onClose}

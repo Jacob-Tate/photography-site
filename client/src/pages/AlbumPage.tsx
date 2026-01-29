@@ -1,4 +1,5 @@
-import { useParams, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useAlbum } from '../hooks/usePhotos';
 import { useLightbox } from '../hooks/useLightbox';
 import { AlbumDetail } from '../api/client';
@@ -6,6 +7,7 @@ import PhotoGrid from '../components/PhotoGrid';
 import Lightbox from '../components/Lightbox';
 import PasswordGate from '../components/PasswordGate';
 import AlbumDownloadButton from '../components/AlbumDownloadButton';
+import ShareButton from '../components/ShareButton';
 import ReadmeContent from '../components/ReadmeContent';
 
 export default function AlbumPage() {
@@ -20,9 +22,21 @@ export default function AlbumPage() {
     path = params.albumSlug;
   }
 
+  const [searchParams] = useSearchParams();
+  const imageParam = searchParams.get('image');
+
   const { data, loading, error, refetch } = useAlbum(path);
   const images = (data as AlbumDetail)?.images || [];
   const lightbox = useLightbox(images);
+
+  // Auto-open lightbox when ?image= param is present
+  useEffect(() => {
+    if (!imageParam || images.length === 0) return;
+    const index = images.findIndex(img => img.filename === imageParam);
+    if (index !== -1) {
+      lightbox.open(index);
+    }
+  }, [imageParam, images.length]);
 
   if (loading) {
     return (
@@ -83,7 +97,10 @@ export default function AlbumPage() {
             <p className="text-neutral-500 text-sm sm:text-base">{album.imageCount} photos</p>
           </div>
           {!album.needsPassword && (
-            <AlbumDownloadButton albumPath={album.path} albumName={album.name} />
+            <div className="flex items-center gap-2">
+              <ShareButton type="album" targetPath={album.path} />
+              <AlbumDownloadButton albumPath={album.path} albumName={album.name} />
+            </div>
           )}
         </div>
 

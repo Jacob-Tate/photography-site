@@ -1,11 +1,25 @@
+import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { usePortfolio } from '../hooks/usePhotos';
 import { useLightbox } from '../hooks/useLightbox';
 import PhotoGrid from '../components/PhotoGrid';
 import Lightbox from '../components/Lightbox';
 
 export default function PortfolioPage() {
+  const [searchParams] = useSearchParams();
+  const imageParam = searchParams.get('image');
+
   const { images, loading, error } = usePortfolio();
   const lightbox = useLightbox(images);
+
+  // Auto-open lightbox when ?image= param is present
+  useEffect(() => {
+    if (!imageParam || images.length === 0) return;
+    const index = images.findIndex(img => img.filename === imageParam);
+    if (index !== -1) {
+      lightbox.open(index);
+    }
+  }, [imageParam, images.length]);
 
   if (loading) {
     return (

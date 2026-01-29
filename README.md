@@ -10,6 +10,7 @@ A self-hosted photography portfolio and gallery application with album managemen
 - EXIF/IPTC metadata display (camera, lens, exposure, GPS, keywords)
 - Interactive map showing geotagged photos
 - Keyword search across all images
+- Shareable links for albums and individual images
 - Download individual images or full albums as ZIP
 - Automatic thumbnail generation
 - Lightroom plugin for uploading directly from Adobe Lightroom (LAN only)
@@ -85,6 +86,13 @@ photos/
 - Add a `password.txt` file containing a password to protect an album
 - Add a `README.md` to any album for a description displayed on the album page
 - Thumbnails are generated automatically on first access
+
+## Sharing
+
+Click the share button on any album or in the lightbox to copy a shareable link to your clipboard.
+
+- **Album**: copies the album URL (e.g. `https://example.com/albums/japan`)
+- **Image**: copies a direct link that opens the lightbox to that image (e.g. `https://example.com/albums/japan?image=DSC1234.jpg`)
 
 ## API Routes
 
