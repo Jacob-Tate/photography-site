@@ -1,0 +1,49 @@
+# Example Docker Compose for Photography Portfolio
+#
+# Usage:
+#   1. Copy this file: cp docker-compose.example.yml docker-compose.yml
+#   2. Create your photos directory structure:
+#        mkdir -p photos/portfolio photos/albums
+#   3. Copy the nginx config:
+#        mkdir -p nginx && curl -o nginx/nginx.conf https://raw.githubusercontent.com/Jacob-Tate/photography-site/main/nginx/nginx.conf
+#   4. Generate secrets:
+#        echo "SESSION_SECRET=$(openssl rand -hex 32)" > .env
+#        echo "API_KEY=$(openssl rand -hex 32)" >> .env
+#   5. Start: docker compose up -d
+#
+# The site will be available at http://localhost
+
+services:
+  app:
+    image: ghcr.io/jacob-tate/photography-site:latest
+    environment:
+      - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      - API_KEY=${API_KEY:?Set API_KEY in .env}
+      - PHOTOS_DIR=/app/photos
+    volumes:
+      - ./photos:/app/photos
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      # Uncomment for HTTPS (requires certs)
+      # - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Uncomment for HTTPS
+      # - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+# Optional: Add Watchtower for automatic updates
+#  watchtower:
+#    image: containrrr/watchtower
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    command: --interval 86400 app
+#    restart: unless-stopped
