@@ -1,0 +1,85 @@
+export interface ImageInfo {
+  filename: string;
+  path: string;
+  width: number;
+  height: number;
+  thumbnailUrl: string;
+  fullUrl: string;
+  downloadUrl: string;
+}
+
+export interface AlbumInfo {
+  name: string;
+  slug: string;
+  path: string;
+  coverImage: string | null;
+  imageCount: number;
+  hasPassword: boolean;
+}
+
+export interface GroupInfo {
+  name: string;
+  slug: string;
+  albums: AlbumInfo[];
+}
+
+export interface AlbumTree {
+  groups: GroupInfo[];
+  albums: AlbumInfo[];
+}
+
+export interface AlbumDetail {
+  type: 'album';
+  name: string;
+  slug: string;
+  path: string;
+  hasPassword: boolean;
+  needsPassword: boolean;
+  images?: ImageInfo[];
+  readme?: string;
+  imageCount: number;
+}
+
+export interface GroupDetail {
+  type: 'group';
+  name: string;
+  slug: string;
+  albums: AlbumInfo[];
+}
+
+export async function fetchPortfolio(): Promise<{ images: ImageInfo[] }> {
+  const res = await fetch('/api/portfolio');
+  if (!res.ok) throw new Error('Failed to fetch portfolio');
+  return res.json();
+}
+
+export async function fetchAlbumTree(): Promise<AlbumTree> {
+  const res = await fetch('/api/albums');
+  if (!res.ok) throw new Error('Failed to fetch albums');
+  return res.json();
+}
+
+export async function fetchAlbumDetail(path: string): Promise<AlbumDetail | GroupDetail> {
+  const res = await fetch(`/api/albums/${path}`);
+  if (!res.ok) throw new Error('Failed to fetch album');
+  return res.json();
+}
+
+export async function checkAuth(albumPath: string): Promise<{ hasPassword: boolean; isUnlocked: boolean }> {
+  const res = await fetch('/api/auth/check', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ albumPath }),
+  });
+  if (!res.ok) throw new Error('Auth check failed');
+  return res.json();
+}
+
+export async function unlockAlbum(albumPath: string, password: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch('/api/auth/unlock', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ albumPath, password }),
+  });
+  return res.json();
+}
