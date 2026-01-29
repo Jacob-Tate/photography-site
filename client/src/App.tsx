@@ -5,6 +5,7 @@ import AlbumsPage from './pages/AlbumsPage';
 import GroupPage from './pages/GroupPage';
 import AlbumPage from './pages/AlbumPage';
 import MapPage from './pages/MapPage';
+import SearchPage from './pages/SearchPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="albums/:groupSlug/:albumSlug" element={<AlbumPage />} />
         <Route path="albums/*" element={<AlbumPage />} />
         <Route path="map" element={<MapPage />} />
+        <Route path="search" element={<SearchPage />} />
       </Route>
     </Routes>
   );

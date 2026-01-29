@@ -118,3 +118,14 @@ export async function fetchMapImages(): Promise<{ images: MapImage[] }> {
   if (!res.ok) throw new Error('Failed to fetch map data');
   return res.json();
 }
+
+export interface SearchResult extends ImageInfo {
+  albumName?: string;
+  albumPath?: string;
+}
+
+export async function searchImages(query: string): Promise<{ results: SearchResult[]; query: string }> {
+  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error('Search failed');
+  return res.json();
+}
