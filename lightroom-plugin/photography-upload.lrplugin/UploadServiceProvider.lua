@@ -2,6 +2,7 @@ local LrView = import 'LrView'
 local LrDialogs = import 'LrDialogs'
 local LrPathUtils = import 'LrPathUtils'
 local LrTasks = import 'LrTasks'
+local LrApplication = import 'LrApplication'
 
 local UploadUtils = require 'UploadUtils'
 
@@ -70,6 +71,13 @@ function provider.syncAlbums(publishService, serverUrl)
               set = publishService:createPublishedCollectionSet(group.name)
             end)
           end
+        end
+
+        -- Store the group's slug as remoteId for path construction
+        if set and set.setRemoteId then
+          catalog:withWriteAccessDo("Update Group RemoteId", function()
+            set:setRemoteId(group.slug)
+          end)
         end
         
         -- B. Sync Albums inside Group
@@ -198,18 +206,50 @@ function provider.didCreateNewPublishService(publishSettings, info)
 end
 
 -- 3. Collection Settings Dialog
+-- Convert display name to filesystem-safe slug
+local function toSlug(name)
+  if not name then return "untitled" end
+  return name:lower():gsub("%s+", "_"):gsub("[^%w_%-]", "")
+end
+
+-- Called when collection settings are saved - persist destination as remoteId
+function provider.updateCollectionSettings(publishSettings, info)
+  local catalog = LrApplication.activeCatalog()
+  local settings = info.collectionSettings
+  local collection = info.publishedCollection
+
+  if settings and settings.destination and settings.destination ~= "" and collection then
+    catalog:withWriteAccessDo("Save Album Path", function()
+      collection:setRemoteId(settings.destination)
+    end)
+  end
+end
+
 function provider.viewForCollectionSettings(f, publishSettings, info)
   local bind = LrView.bind
-  local settings = info.collectionSettings 
-  
+  local settings = info.collectionSettings
+
   if not settings.destination then
-    local defaultName = "Untitled"
+    local albumSlug = "untitled"
     if info.name then
-      defaultName = info.name
+      albumSlug = toSlug(info.name)
     elseif info.publishedCollection then
-      defaultName = info.publishedCollection:getName()
+      albumSlug = toSlug(info.publishedCollection:getName())
     end
-    settings.destination = 'albums/' .. defaultName
+
+    -- Check if we're inside a collection set (folder) and use its remoteId (slug)
+    local parentSlug = ""
+    if info.collectionSet then
+      local parentRemoteId = info.collectionSet:getRemoteId()
+      if parentRemoteId and parentRemoteId ~= "" then
+        parentSlug = parentRemoteId .. "/"
+      else
+        -- Fallback: slugify the collection set name
+        parentSlug = toSlug(info.collectionSet:getName()) .. "/"
+      end
+    end
+
+    settings.destination = 'albums/' .. parentSlug .. albumSlug
   end
 
   return f:view {
@@ -254,16 +294,70 @@ function provider.processRenderedPhotos(functionContext, exportContext)
   end
   
   local destination = "portfolio"
-  
-  if exportContext.publishedCollectionInfo then
-    local info = exportContext.publishedCollectionInfo
-    local settings = info.collectionSettings
-    
-    if settings and settings.destination and settings.destination ~= "" then
-      destination = settings.destination
-    elseif info.name then
-      destination = "albums/" .. info.name
+
+  -- Try multiple ways to get the collection and its settings
+  local settings = nil
+  local remoteId = nil
+  local debugParts = {}
+
+  -- Method 1: exportContext.publishedCollection (direct property)
+  if exportContext.publishedCollection then
+    table.insert(debugParts, "Method1: found publishedCollection")
+    local collInfo = exportContext.publishedCollection:getCollectionInfoSummary()
+    if collInfo and collInfo.collectionSettings then
+      settings = collInfo.collectionSettings
+      table.insert(debugParts, "settings from Method1")
     end
+    remoteId = exportContext.publishedCollection:getRemoteId()
+  end
+
+  -- Method 2: publishedCollectionInfo
+  if not settings and exportContext.publishedCollectionInfo then
+    local info = exportContext.publishedCollectionInfo
+    table.insert(debugParts, "Method2: has publishedCollectionInfo")
+
+    if info.publishedCollection then
+      table.insert(debugParts, "has info.publishedCollection")
+      local collInfo = info.publishedCollection:getCollectionInfoSummary()
+      if collInfo and collInfo.collectionSettings then
+        settings = collInfo.collectionSettings
+      end
+      if not remoteId then
+        remoteId = info.publishedCollection:getRemoteId()
+      end
+    end
+
+    if not settings and info.collectionSettings then
+      settings = info.collectionSettings
+      table.insert(debugParts, "settings from info.collectionSettings")
+    end
+
+    if not remoteId and info.remoteId then
+      remoteId = info.remoteId
+    end
+  end
+
+  -- Method 3: Try to get from the first rendition's publishedPhoto
+  if not settings then
+    for _, rendition in exportContext:renditions() do
+      if rendition.publishedPhotoId then
+        table.insert(debugParts, "Method3: found publishedPhotoId: " .. tostring(rendition.publishedPhotoId))
+        break
+      end
+    end
+  end
+
+  table.insert(debugParts, "Final - settings: " .. tostring(settings ~= nil))
+  table.insert(debugParts, "destination: " .. tostring(settings and settings.destination))
+  table.insert(debugParts, "remoteId: " .. tostring(remoteId))
+
+  LrDialogs.message("Upload Debug", table.concat(debugParts, "\n"), "info")
+
+  -- Priority: collectionSettings.destination > remoteId
+  if settings and settings.destination and settings.destination ~= "" then
+    destination = settings.destination
+  elseif remoteId and remoteId ~= "" then
+    destination = remoteId
   end
   
   for i, rendition in exportContext:renditions { stopIfCanceled = true } do
