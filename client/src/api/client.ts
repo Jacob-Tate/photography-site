@@ -14,6 +14,11 @@ export interface ExifData {
   flash?: string;
   colorSpace?: string;
   keywords?: string[];
+  gps?: {
+    latitude: number;
+    longitude: number;
+    altitude?: number;
+  };
 }
 
 export interface ImageInfo {

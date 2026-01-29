@@ -402,6 +402,21 @@ export default function Lightbox({
                   <span className="text-white/90">{image.exif.dateTaken}</span>
                 </div>
               )}
+              {image.exif.gps && (
+                <div className="flex justify-between text-white/70 items-center">
+                  <span>Location</span>
+                  <a
+                    href={`https://www.google.com/maps?q=${image.exif.gps.latitude},${image.exif.gps.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {image.exif.gps.latitude.toFixed(4)}, {image.exif.gps.longitude.toFixed(4)}
+                    {image.exif.gps.altitude !== undefined && ` (${image.exif.gps.altitude}m)`}
+                  </a>
+                </div>
+              )}
             </div>
           )}
 

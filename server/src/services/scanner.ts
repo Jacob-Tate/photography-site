@@ -150,6 +150,47 @@ async function getImageMetadata(filePath: string): Promise<{ width: number; heig
         exif.flash = (flash & 1) ? 'Fired' : 'Off';
       }
 
+      // GPS location
+      if (parsed.GPSInfo?.GPSLatitude && parsed.GPSInfo?.GPSLongitude) {
+        try {
+          const lat = parsed.GPSInfo.GPSLatitude;
+          const lon = parsed.GPSInfo.GPSLongitude;
+          const latRef = parsed.GPSInfo.GPSLatitudeRef || 'N';
+          const lonRef = parsed.GPSInfo.GPSLongitudeRef || 'E';
+
+          // Convert DMS (degrees, minutes, seconds) array to decimal
+          const toDecimal = (dms: number[]): number => {
+            if (dms.length >= 3) {
+              return dms[0] + dms[1] / 60 + dms[2] / 3600;
+            } else if (dms.length === 2) {
+              return dms[0] + dms[1] / 60;
+            }
+            return dms[0] || 0;
+          };
+
+          let latitude = toDecimal(lat);
+          let longitude = toDecimal(lon);
+
+          // Apply reference direction
+          if (latRef === 'S') latitude = -latitude;
+          if (lonRef === 'W') longitude = -longitude;
+
+          exif.gps = { latitude, longitude };
+
+          // Add altitude if available
+          if (parsed.GPSInfo.GPSAltitude !== undefined) {
+            let altitude = parsed.GPSInfo.GPSAltitude;
+            // GPSAltitudeRef: 0 = above sea level, 1 = below sea level
+            if (parsed.GPSInfo.GPSAltitudeRef === 1) {
+              altitude = -altitude;
+            }
+            exif.gps.altitude = Math.round(altitude);
+          }
+        } catch {
+          // GPS parsing failed, continue without it
+        }
+      }
+
     } catch {
       // EXIF parsing failed, continue with just dimension data
     }
