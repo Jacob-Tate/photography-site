@@ -398,10 +398,17 @@ export async function scanAlbumImages(albumPath: string): Promise<ImageInfo[]> {
 
 export function getAlbumReadme(albumPath: string): string | undefined {
   const fullDir = path.join(ALBUMS_DIR, albumPath.replace(/^albums\//, ''));
-  const readmePath = path.join(fullDir, 'README.md');
-  if (fs.existsSync(readmePath)) {
-    return fs.readFileSync(readmePath, 'utf-8');
+  
+  // Check for README in various casing to support Linux production environments
+  const candidates = ['README.md', 'readme.md', 'Readme.md', 'README.txt', 'readme.txt'];
+  
+  for (const candidate of candidates) {
+    const readmePath = path.join(fullDir, candidate);
+    if (fs.existsSync(readmePath)) {
+      return fs.readFileSync(readmePath, 'utf-8');
+    }
   }
+  
   return undefined;
 }
 

@@ -66,8 +66,8 @@ function createMarked(albumPath?: string): Marked {
     marked.use({ renderer });
   }
 
-  // Configure marked options
-  marked.setOptions({
+  // Configure marked options using .use() instead of setOptions
+  marked.use({
     gfm: true,
     breaks: true,
   });
