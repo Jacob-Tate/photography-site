@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
-import { marked } from 'marked';
+import { renderMarkdown } from '../services/markdown';
 import { scanAlbums, scanAlbumImages, getAlbumReadme, getAlbumDir } from '../services/scanner';
 import { getAlbumPassword, isAlbumUnlocked } from '../services/password';
 import { ALBUMS_DIR, IMAGE_EXTENSIONS } from '../config';
@@ -78,7 +78,7 @@ router.get('/*', async (req, res) => {
         hasPassword: !!password,
         needsPassword: false,
         images,
-        readme: readme ? await marked(readme) : undefined,
+        readme: readme ? await renderMarkdown(readme, albumPath) : undefined,
         imageCount: images.length,
       });
     } else if (hasSubDirs) {

@@ -40,17 +40,31 @@ export default function AlbumsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
+    <div className="max-w-7xl mx-auto p-3 sm:p-4 safe-left safe-right">
+      {/* Top-level albums */}
+      {data.albums.length > 0 && (
+        <div className={data.groups.length > 0 ? 'mb-8 sm:mb-12' : ''}>
+          {data.groups.length > 0 && (
+            <h2 className="text-base sm:text-lg font-medium text-white mb-3 sm:mb-4">Albums</h2>
+          )}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {data.albums.map(album => (
+              <AlbumCard key={album.path} album={album} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Groups */}
       {data.groups.map(group => (
-        <div key={group.slug} className="mb-12">
+        <div key={group.slug} className="mb-8 sm:mb-12">
           <Link
             to={`/albums/${group.slug}`}
-            className="text-lg font-medium text-white hover:text-neutral-300 mb-4 block"
+            className="text-base sm:text-lg font-medium text-white hover:text-neutral-300 active:text-neutral-300 mb-3 sm:mb-4 block touch-target"
           >
             {group.name}
           </Link>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {group.albums.slice(0, 4).map(album => (
               <AlbumCard key={album.path} album={album} />
             ))}
@@ -58,27 +72,13 @@ export default function AlbumsPage() {
           {group.albums.length > 4 && (
             <Link
               to={`/albums/${group.slug}`}
-              className="mt-4 inline-block text-neutral-400 hover:text-white text-sm transition-colors"
+              className="mt-3 sm:mt-4 inline-block text-neutral-400 hover:text-white active:text-white text-sm transition-colors py-2 touch-target"
             >
               View all {group.albums.length} albums
             </Link>
           )}
         </div>
       ))}
-
-      {/* Top-level albums */}
-      {data.albums.length > 0 && (
-        <div>
-          {data.groups.length > 0 && (
-            <h2 className="text-lg font-medium text-white mb-4">Albums</h2>
-          )}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {data.albums.map(album => (
-              <AlbumCard key={album.path} album={album} />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -2,6 +2,150 @@
 @tailwind components;
 @tailwind utilities;
 
+/* PWA & Mobile Support */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+html {
+  /* Prevent pull-to-refresh on mobile */
+  overscroll-behavior-y: contain;
+}
+
 body {
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: pan-x pan-y;
+}
+
+/* Safe area padding utilities */
+.safe-top {
+  padding-top: var(--safe-area-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.safe-left {
+  padding-left: var(--safe-area-left);
+}
+
+.safe-right {
+  padding-right: var(--safe-area-right);
+}
+
+/* Prevent text selection on interactive elements */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Touch-friendly button sizing */
+@media (pointer: coarse) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Hide scrollbar but allow scrolling */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scrolling for the app */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Enhanced markdown styling */
+.prose pre {
+  @apply rounded-lg border border-neutral-800;
+}
+
+.prose code:not(pre code) {
+  @apply bg-neutral-800 px-1.5 py-0.5 rounded text-sm font-normal;
+}
+
+.prose code:not(pre code)::before,
+.prose code:not(pre code)::after {
+  content: none;
+}
+
+.prose table {
+  @apply w-full border-collapse;
+}
+
+.prose th,
+.prose td {
+  @apply border border-neutral-700 px-3 py-2;
+}
+
+.prose th {
+  @apply bg-neutral-800 font-medium;
+}
+
+.prose tr:nth-child(even) {
+  @apply bg-neutral-900/50;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-neutral-600 bg-neutral-900/50 py-1 not-italic;
+}
+
+.prose hr {
+  @apply border-neutral-700;
+}
+
+.prose a {
+  @apply text-blue-400 no-underline hover:underline;
+}
+
+.prose img {
+  @apply rounded-lg;
+}
+
+.prose figure {
+  @apply my-4 inline-block;
+}
+
+.prose figure img {
+  @apply mb-2;
+}
+
+.prose figcaption {
+  @apply text-center text-sm text-neutral-400;
+}
+
+.prose figure a {
+  @apply no-underline;
+}
+
+.prose a.readme-lightbox {
+  @apply cursor-pointer;
+}
+
+/* Task list styling */
+.prose ul:has(input[type="checkbox"]) {
+  @apply list-none pl-0;
+}
+
+.prose li:has(> input[type="checkbox"]) {
+  @apply flex items-start gap-2;
+}
+
+.prose input[type="checkbox"] {
+  @apply mt-1.5 h-4 w-4 rounded border-neutral-600 bg-neutral-800;
 }

@@ -27,6 +27,11 @@ export default function Lightbox({
   const positionStart = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Touch gesture state
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const lastTouchDistanceRef = useRef<number | null>(null);
+  const [showControls, setShowControls] = useState(true);
+
   const isLoaded = loadedUrl === image.fullUrl;
   const isZoomed = zoom > 1;
 
@@ -49,9 +54,9 @@ export default function Lightbox({
     preload.src = image.fullUrl;
   }, [image.fullUrl]);
 
-  const handleZoom = useCallback((delta: number, centerX?: number, centerY?: number) => {
+  const handleZoom = useCallback((delta: number) => {
     setZoom(prev => {
-      const newZoom = Math.max(1, Math.min(5, prev + delta));
+      const newZoom = Math.max(1, Math.min(10, prev + delta));
       if (newZoom === 1) {
         setPosition({ x: 0, y: 0 });
       }
@@ -96,6 +101,72 @@ export default function Lightbox({
     setIsDragging(false);
   }, []);
 
+  // Touch handlers for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      };
+      if (isZoomed) {
+        setIsDragging(true);
+        dragStart.current = { x: touch.clientX, y: touch.clientY };
+        positionStart.current = position;
+      }
+    } else if (e.touches.length === 2) {
+      // Pinch to zoom
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+    }
+  }, [isZoomed, position]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isZoomed && isDragging) {
+      const touch = e.touches[0];
+      const dx = touch.clientX - dragStart.current.x;
+      const dy = touch.clientY - dragStart.current.y;
+      setPosition({
+        x: positionStart.current.x + dx,
+        y: positionStart.current.y + dy,
+      });
+    } else if (e.touches.length === 2 && lastTouchDistanceRef.current !== null) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const delta = (distance - lastTouchDistanceRef.current) * 0.02;
+      handleZoom(delta);
+      lastTouchDistanceRef.current = distance;
+    }
+  }, [isZoomed, isDragging, handleZoom]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 0 && touchStartRef.current && !isZoomed) {
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - touchStartRef.current.x;
+      const dy = touch.clientY - touchStartRef.current.y;
+      const dt = Date.now() - touchStartRef.current.time;
+
+      // Swipe detection (min 50px, max 300ms)
+      if (dt < 300 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0 && hasPrev) {
+          onPrev();
+        } else if (dx < 0 && hasNext) {
+          onNext();
+        }
+      } else if (dt < 200 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+        // Tap to toggle controls
+        setShowControls(prev => !prev);
+      }
+    }
+    setIsDragging(false);
+    touchStartRef.current = null;
+    lastTouchDistanceRef.current = null;
+  }, [isZoomed, hasPrev, hasNext, onPrev, onNext]);
+
   // Handle keyboard for zoom
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -114,15 +185,22 @@ export default function Lightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center select-none"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent">
-        {/* Zoom controls */}
-        <div className="flex items-center gap-2">
+      {/* Top bar - hidden on mobile when tapped */}
+      <div
+        className={`absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 safe-top bg-gradient-to-b from-black/50 to-transparent transition-opacity duration-200 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
+        {/* Zoom controls - hidden on small screens */}
+        <div className="hidden sm:flex items-center gap-2">
           <button
             onClick={() => handleZoom(-0.5)}
             className="p-2 text-white/70 hover:text-white transition-colors"
@@ -154,26 +232,29 @@ export default function Lightbox({
           )}
         </div>
 
+        {/* Mobile: Empty space for balance */}
+        <div className="sm:hidden" />
+
         {/* Right controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <DownloadButton url={image.downloadUrl} filename={image.filename} />
           <button
             onClick={onClose}
-            className="p-2 text-white/70 hover:text-white transition-colors"
+            className="p-3 sm:p-2 text-white/70 hover:text-white transition-colors touch-target"
             aria-label="Close"
           >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Previous button */}
+      {/* Previous button - hidden on touch devices */}
       {hasPrev && !isZoomed && (
         <button
           onClick={onPrev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 text-white/70 hover:text-white transition-colors"
+          className="hidden sm:block absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 text-white/70 hover:text-white transition-colors"
           aria-label="Previous"
         >
           <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,11 +263,11 @@ export default function Lightbox({
         </button>
       )}
 
-      {/* Next button */}
+      {/* Next button - hidden on touch devices */}
       {hasNext && !isZoomed && (
         <button
           onClick={onNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 text-white/70 hover:text-white transition-colors"
+          className="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 text-white/70 hover:text-white transition-colors"
           aria-label="Next"
         >
           <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,10 +313,11 @@ export default function Lightbox({
         <div className="absolute inset-0 -z-10" onClick={onClose} />
       )}
 
-      {/* Zoom hint */}
-      {isLoaded && !isZoomed && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/40 text-sm pointer-events-none">
-          Scroll or double-click to zoom
+      {/* Zoom/swipe hint */}
+      {isLoaded && !isZoomed && showControls && (
+        <div className="absolute bottom-4 safe-bottom left-1/2 -translate-x-1/2 text-white/40 text-sm pointer-events-none text-center px-4">
+          <span className="hidden sm:inline">Scroll or double-click to zoom</span>
+          <span className="sm:hidden">Swipe to navigate • Pinch to zoom</span>
         </div>
       )}
     </div>
