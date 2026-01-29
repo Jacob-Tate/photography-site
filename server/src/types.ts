@@ -1,3 +1,21 @@
+export interface ExifData {
+  camera?: string;
+  lens?: string;
+  focalLength?: string;
+  aperture?: string;
+  shutterSpeed?: string;
+  iso?: number;
+  dateTaken?: string;
+  dimensions?: string;
+  aspectRatio?: string;
+  megapixels?: string;
+  exposureComp?: string;
+  whiteBalance?: string;
+  flash?: string;
+  colorSpace?: string;
+  keywords?: string[];
+}
+
 export interface ImageInfo {
   filename: string;
   path: string;
@@ -6,6 +24,7 @@ export interface ImageInfo {
   thumbnailUrl: string;
   fullUrl: string;
   downloadUrl: string;
+  exif?: ExifData;
 }
 
 export interface AlbumInfo {

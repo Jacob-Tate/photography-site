@@ -31,14 +31,16 @@ export default function Lightbox({
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const lastTouchDistanceRef = useRef<number | null>(null);
   const [showControls, setShowControls] = useState(true);
+  const [showFullExif, setShowFullExif] = useState(false);
 
   const isLoaded = loadedUrl === image.fullUrl;
   const isZoomed = zoom > 1;
 
-  // Reset zoom and position when image changes
+  // Reset zoom, position, and exif panel when image changes
   useEffect(() => {
     setZoom(1);
     setPosition({ x: 0, y: 0 });
+    setShowFullExif(false);
   }, [image.fullUrl]);
 
   useEffect(() => {
@@ -315,10 +317,98 @@ export default function Lightbox({
       )}
 
       {/* Zoom/swipe hint */}
-      {isLoaded && !isZoomed && showControls && (
+      {isLoaded && !isZoomed && showControls && !image.exif && (
         <div className="absolute bottom-4 safe-bottom left-1/2 -translate-x-1/2 text-white/40 text-sm pointer-events-none text-center px-4">
           <span className="hidden sm:inline">Scroll or double-click to zoom</span>
           <span className="sm:hidden">Swipe to navigate • Pinch to zoom</span>
+        </div>
+      )}
+
+      {/* EXIF data panel */}
+      {isLoaded && showControls && image.exif && (
+        <div
+          className="absolute bottom-4 right-4 safe-bottom bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] cursor-pointer select-none"
+          onClick={(e) => { e.stopPropagation(); setShowFullExif(!showFullExif); }}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
+          {/* Primary exposure settings */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+            {image.exif.focalLength && (
+              <span className="whitespace-nowrap font-medium">{image.exif.focalLength}</span>
+            )}
+            {image.exif.aperture && (
+              <span className="whitespace-nowrap font-medium">{image.exif.aperture}</span>
+            )}
+            {image.exif.shutterSpeed && (
+              <span className="whitespace-nowrap font-medium">{image.exif.shutterSpeed}</span>
+            )}
+            {image.exif.iso && (
+              <span className="whitespace-nowrap font-medium">ISO {image.exif.iso}</span>
+            )}
+            {image.exif.exposureComp && image.exif.exposureComp !== '±0 EV' && (
+              <span className="whitespace-nowrap text-white/70">{image.exif.exposureComp}</span>
+            )}
+          </div>
+
+          {/* Camera and lens */}
+          {(image.exif.camera || image.exif.lens) && (
+            <div className="mt-1 text-white/60 truncate">
+              {image.exif.camera}
+              {image.exif.camera && image.exif.lens && ' · '}
+              {image.exif.lens}
+            </div>
+          )}
+
+          {/* Expanded details */}
+          {showFullExif && (
+            <div className="mt-2 pt-2 border-t border-white/20 space-y-1">
+              {/* Dimensions row */}
+              {image.exif.dimensions && (
+                <div className="flex justify-between text-white/70">
+                  <span>Dimensions</span>
+                  <span className="text-white/90">
+                    {image.exif.dimensions}
+                    {image.exif.aspectRatio && ` (${image.exif.aspectRatio})`}
+                  </span>
+                </div>
+              )}
+              {image.exif.megapixels && (
+                <div className="flex justify-between text-white/70">
+                  <span>Resolution</span>
+                  <span className="text-white/90">{image.exif.megapixels}</span>
+                </div>
+              )}
+              {image.exif.colorSpace && (
+                <div className="flex justify-between text-white/70">
+                  <span>Color Space</span>
+                  <span className="text-white/90">{image.exif.colorSpace}</span>
+                </div>
+              )}
+              {image.exif.whiteBalance && (
+                <div className="flex justify-between text-white/70">
+                  <span>White Balance</span>
+                  <span className="text-white/90">{image.exif.whiteBalance}</span>
+                </div>
+              )}
+              {image.exif.flash && (
+                <div className="flex justify-between text-white/70">
+                  <span>Flash</span>
+                  <span className="text-white/90">{image.exif.flash}</span>
+                </div>
+              )}
+              {image.exif.dateTaken && (
+                <div className="flex justify-between text-white/70">
+                  <span>Date</span>
+                  <span className="text-white/90">{image.exif.dateTaken}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Expand hint */}
+          {!showFullExif && (image.exif.dimensions || image.exif.dateTaken) && (
+            <div className="mt-1 text-white/40 text-center">tap for more</div>
+          )}
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+import exifReader from 'exif-reader';
 import { IMAGE_EXTENSIONS, PORTFOLIO_DIR, ALBUMS_DIR } from '../config';
-import { ImageInfo, AlbumInfo, GroupInfo, AlbumTree } from '../types';
+import { ImageInfo, AlbumInfo, GroupInfo, AlbumTree, ExifData } from '../types';
 
 function isImageFile(filename: string): boolean {
   return IMAGE_EXTENSIONS.includes(path.extname(filename).toLowerCase());
@@ -12,9 +13,151 @@ function formatAlbumName(dirname: string): string {
   return dirname.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-async function getImageDimensions(filePath: string): Promise<{ width: number; height: number }> {
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+function formatAspectRatio(width: number, height: number): string {
+  const divisor = gcd(width, height);
+  const w = width / divisor;
+  const h = height / divisor;
+  // Simplify common ratios
+  if ((w === 3 && h === 2) || (w === 2 && h === 3)) return '3:2';
+  if ((w === 4 && h === 3) || (w === 3 && h === 4)) return '4:3';
+  if ((w === 16 && h === 9) || (w === 9 && h === 16)) return '16:9';
+  if ((w === 1 && h === 1)) return '1:1';
+  if (w > 20 || h > 20) {
+    // For complex ratios, approximate to common ones
+    const ratio = width / height;
+    if (Math.abs(ratio - 1.5) < 0.05) return '3:2';
+    if (Math.abs(ratio - 1.33) < 0.05) return '4:3';
+    if (Math.abs(ratio - 1.78) < 0.05) return '16:9';
+    if (Math.abs(ratio - 0.67) < 0.05) return '2:3';
+    if (Math.abs(ratio - 0.75) < 0.05) return '3:4';
+    if (Math.abs(ratio - 0.56) < 0.05) return '9:16';
+  }
+  return `${w}:${h}`;
+}
+
+async function getImageMetadata(filePath: string): Promise<{ width: number; height: number; exif?: ExifData }> {
   const metadata = await sharp(filePath).metadata();
-  return { width: metadata.width || 0, height: metadata.height || 0 };
+  const width = metadata.width || 0;
+  const height = metadata.height || 0;
+
+  // Start with dimension info (always available)
+  const exif: ExifData = {};
+
+  if (width && height) {
+    exif.dimensions = `${width} × ${height}`;
+    exif.aspectRatio = formatAspectRatio(width, height);
+    const mp = (width * height) / 1000000;
+    exif.megapixels = mp >= 1 ? `${mp.toFixed(1)} MP` : `${(mp * 1000).toFixed(0)} KP`;
+  }
+
+  // Color space from sharp metadata
+  if (metadata.space) {
+    exif.colorSpace = metadata.space.toUpperCase();
+  }
+
+  if (metadata.exif) {
+    try {
+      const parsed = exifReader(metadata.exif);
+
+      // Camera make and model
+      if (parsed.Image?.Make || parsed.Image?.Model) {
+        const make = parsed.Image?.Make?.toString().trim() || '';
+        const model = parsed.Image?.Model?.toString().trim() || '';
+        // Avoid duplicating make in model (e.g., "Canon Canon EOS R5")
+        exif.camera = model.startsWith(make) ? model : `${make} ${model}`.trim();
+      }
+
+      // Lens info
+      if (parsed.Photo?.LensModel) {
+        exif.lens = parsed.Photo.LensModel.toString();
+      }
+
+      // Focal length
+      if (parsed.Photo?.FocalLength) {
+        exif.focalLength = `${parsed.Photo.FocalLength}mm`;
+      }
+
+      // Aperture (FNumber)
+      if (parsed.Photo?.FNumber) {
+        exif.aperture = `f/${parsed.Photo.FNumber}`;
+      }
+
+      // Shutter speed (ExposureTime)
+      if (parsed.Photo?.ExposureTime) {
+        const exposure = parsed.Photo.ExposureTime;
+        if (exposure >= 1) {
+          exif.shutterSpeed = `${exposure}s`;
+        } else {
+          // Convert to fraction (e.g., 1/250)
+          const denominator = Math.round(1 / exposure);
+          exif.shutterSpeed = `1/${denominator}s`;
+        }
+      }
+
+      // ISO
+      if (parsed.Photo?.ISOSpeedRatings) {
+        exif.iso = Array.isArray(parsed.Photo.ISOSpeedRatings)
+          ? parsed.Photo.ISOSpeedRatings[0]
+          : parsed.Photo.ISOSpeedRatings;
+      }
+
+      // Date and time taken
+      // EXIF DateTimeOriginal is local camera time without timezone
+      // exif-reader returns it as a Date, but we need to extract the values
+      // without timezone conversion to preserve the original camera time
+      if (parsed.Photo?.DateTimeOriginal) {
+        const date = parsed.Photo.DateTimeOriginal;
+        if (date instanceof Date) {
+          // Use UTC methods since exif-reader often stores the "local" time in UTC fields
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const month = months[date.getUTCMonth()];
+          const day = date.getUTCDate();
+          const year = date.getUTCFullYear();
+          const hours = date.getUTCHours();
+          const minutes = date.getUTCMinutes();
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const hour12 = hours % 12 || 12;
+          const minuteStr = minutes.toString().padStart(2, '0');
+          exif.dateTaken = `${month} ${day}, ${year} at ${hour12}:${minuteStr} ${ampm}`;
+        }
+      }
+
+      // Exposure compensation
+      if (parsed.Photo?.ExposureBiasValue !== undefined) {
+        const ev = parsed.Photo.ExposureBiasValue;
+        if (ev === 0) {
+          exif.exposureComp = '±0 EV';
+        } else if (ev > 0) {
+          exif.exposureComp = `+${ev.toFixed(1)} EV`;
+        } else {
+          exif.exposureComp = `${ev.toFixed(1)} EV`;
+        }
+      }
+
+      // White balance
+      if (parsed.Photo?.WhiteBalance !== undefined) {
+        exif.whiteBalance = parsed.Photo.WhiteBalance === 0 ? 'Auto' : 'Manual';
+      }
+
+      // Flash
+      if (parsed.Photo?.Flash !== undefined) {
+        const flash = parsed.Photo.Flash;
+        // Flash value is a bitmask, bit 0 indicates if flash fired
+        exif.flash = (flash & 1) ? 'Fired' : 'Off';
+      }
+
+    } catch {
+      // EXIF parsing failed, continue with just dimension data
+    }
+  }
+
+  // Only return exif if we have any meaningful data
+  const hasData = Object.keys(exif).length > 0;
+  return { width, height, exif: hasData ? exif : undefined };
 }
 
 function listImageFiles(dir: string): string[] {
@@ -30,7 +173,7 @@ export async function scanPortfolio(): Promise<ImageInfo[]> {
 
   for (const filename of files) {
     const filePath = path.join(PORTFOLIO_DIR, filename);
-    const { width, height } = await getImageDimensions(filePath);
+    const { width, height, exif } = await getImageMetadata(filePath);
     images.push({
       filename,
       path: `portfolio/${filename}`,
@@ -39,6 +182,7 @@ export async function scanPortfolio(): Promise<ImageInfo[]> {
       thumbnailUrl: `/api/images/thumbnail/portfolio/${filename}`,
       fullUrl: `/api/images/full/portfolio/${filename}`,
       downloadUrl: `/api/images/download/portfolio/${filename}`,
+      exif,
     });
   }
 
@@ -132,7 +276,7 @@ export async function scanAlbumImages(albumPath: string): Promise<ImageInfo[]> {
 
   for (const filename of files) {
     const filePath = path.join(fullDir, filename);
-    const { width, height } = await getImageDimensions(filePath);
+    const { width, height, exif } = await getImageMetadata(filePath);
     const imgPath = `${albumPath}/${filename}`;
     images.push({
       filename,
@@ -142,6 +286,7 @@ export async function scanAlbumImages(albumPath: string): Promise<ImageInfo[]> {
       thumbnailUrl: `/api/images/thumbnail/${imgPath}`,
       fullUrl: `/api/images/full/${imgPath}`,
       downloadUrl: `/api/images/download/${imgPath}`,
+      exif,
     });
   }
 
