@@ -97,7 +97,7 @@ router.get('/*', async (req, res) => {
           const subPath = `${albumPath}/${sub}`;
           return {
             name: formatName(sub),
-            slug: sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+            slug: sub,
             path: subPath,
             coverImage: subImages.length > 0
               ? `/api/images/thumbnail/${subPath}/${subImages[0]}`

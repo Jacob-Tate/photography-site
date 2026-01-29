@@ -8,10 +8,6 @@ function isImageFile(filename: string): boolean {
   return IMAGE_EXTENSIONS.includes(path.extname(filename).toLowerCase());
 }
 
-function slugify(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
 function formatAlbumName(dirname: string): string {
   return dirname.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -69,7 +65,7 @@ function buildAlbumInfo(albumDir: string, albumPath: string): AlbumInfo {
 
   return {
     name: formatAlbumName(name),
-    slug: slugify(name),
+    slug: name,
     path: albumPath,
     coverImage: images.length > 0
       ? `/api/images/thumbnail/${albumPath}/${images[0]}`
@@ -116,7 +112,7 @@ export function scanAlbums(): AlbumTree {
       if (groupAlbums.length > 0) {
         groups.push({
           name: formatAlbumName(entry),
-          slug: slugify(entry),
+          slug: entry,
           albums: groupAlbums,
         });
       }

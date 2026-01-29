@@ -1,11 +1,18 @@
 import { useParams, Link } from 'react-router-dom';
 import { useAlbum } from '../hooks/usePhotos';
-import { GroupDetail } from '../api/client';
+import { useLightbox } from '../hooks/useLightbox';
+import { GroupDetail, AlbumDetail } from '../api/client';
 import AlbumCard from '../components/AlbumCard';
+import PhotoGrid from '../components/PhotoGrid';
+import Lightbox from '../components/Lightbox';
+import PasswordGate from '../components/PasswordGate';
+import AlbumDownloadButton from '../components/AlbumDownloadButton';
 
 export default function GroupPage() {
   const { groupSlug } = useParams<{ groupSlug: string }>();
-  const { data, loading, error } = useAlbum(groupSlug || '');
+  const { data, loading, error, refetch } = useAlbum(groupSlug || '');
+  const images = (data as AlbumDetail)?.images || [];
+  const lightbox = useLightbox(images);
 
   if (loading) {
     return (
@@ -23,10 +30,68 @@ export default function GroupPage() {
     );
   }
 
+  // Handle album type (directory with images)
+  if (data.type === 'album') {
+    const album = data as AlbumDetail;
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="p-4 pb-0">
+          <div className="mb-4 flex items-center text-sm">
+            <Link to="/albums" className="text-neutral-400 hover:text-white transition-colors">
+              Albums
+            </Link>
+            <span className="text-neutral-600 mx-2">/</span>
+            <span className="text-white">{album.name}</span>
+          </div>
+
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-medium text-white">{album.name}</h1>
+              <p className="text-neutral-500">{album.imageCount} photos</p>
+            </div>
+            {!album.needsPassword && (
+              <AlbumDownloadButton albumPath={album.path} albumName={album.name} />
+            )}
+          </div>
+
+          {album.readme && (
+            <div
+              className="prose prose-invert prose-sm max-w-none mb-6 text-neutral-300"
+              dangerouslySetInnerHTML={{ __html: album.readme }}
+            />
+          )}
+        </div>
+
+        {album.needsPassword ? (
+          <PasswordGate
+            albumPath={album.path}
+            albumName={album.name}
+            onUnlock={refetch}
+          />
+        ) : (
+          <>
+            <PhotoGrid images={images} onPhotoClick={lightbox.open} />
+            {lightbox.isOpen && lightbox.currentImage && (
+              <Lightbox
+                image={lightbox.currentImage}
+                onClose={lightbox.close}
+                onNext={lightbox.next}
+                onPrev={lightbox.prev}
+                hasNext={lightbox.hasNext}
+                hasPrev={lightbox.hasPrev}
+              />
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // Handle group type (directory with subdirectories)
   if (data.type !== 'group') {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-red-400">
-        Not a group
+        Not found
       </div>
     );
   }
