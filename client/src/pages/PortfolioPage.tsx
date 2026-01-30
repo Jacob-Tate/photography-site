@@ -56,6 +56,9 @@ export default function PortfolioPage() {
           onPrev={lightbox.prev}
           hasNext={lightbox.hasNext}
           hasPrev={lightbox.hasPrev}
+          images={images}
+          currentIndex={lightbox.currentIndex!}
+          onNavigate={lightbox.navigateTo}
         />
       )}
     </>

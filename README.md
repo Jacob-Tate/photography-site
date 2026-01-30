@@ -4,7 +4,7 @@ A self-hosted photography portfolio and gallery application with album managemen
 
 ## Features
 
-- Portfolio gallery with masonry layout and full-screen lightbox viewer
+- Portfolio gallery with masonry layout and full-screen lightbox viewer with filmstrip navigation
 - Albums organized into groups and collections
 - Password-protected albums
 - EXIF/IPTC metadata display (camera, lens, exposure, GPS, keywords)
@@ -91,6 +91,10 @@ photos/
 - Add a `README.md` to any album for a description displayed on the album page
 - Thumbnails are generated automatically on first access
 - Albums with date-prefixed names (`YYYYMMDD`, e.g. `20250115_pax_east`) are sorted newest-first
+
+## Lightbox Filmstrip
+
+When viewing a photo in the lightbox, a horizontal thumbnail filmstrip appears at the bottom of the screen showing all images in the current album or collection. The active image is highlighted and auto-centered. Click any thumbnail to jump directly to that image. The filmstrip hides automatically when zoomed in or when controls are hidden (tap on mobile).
 
 ## Sharing
 

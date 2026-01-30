@@ -146,6 +146,9 @@ export default function GroupPage() {
                 onPrev={lightbox.prev}
                 hasNext={lightbox.hasNext}
                 hasPrev={lightbox.hasPrev}
+                images={sortedImages}
+                currentIndex={lightbox.currentIndex!}
+                onNavigate={lightbox.navigateTo}
               />
             )}
           </>

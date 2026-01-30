@@ -419,6 +419,9 @@ export default function MapPage() {
                 ? false
                 : lightboxIndex - 1 > 0
             }
+            images={selectedImages}
+            currentIndex={selectedImages.length === 1 ? 0 : lightboxIndex - 1}
+            onNavigate={(idx) => setLightboxIndex(idx + 1)}
           />
         </div>
       )}

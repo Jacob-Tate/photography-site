@@ -11,6 +11,9 @@ interface LightboxProps {
   onPrev: () => void;
   hasNext: boolean;
   hasPrev: boolean;
+  images?: ImageInfo[];
+  currentIndex?: number;
+  onNavigate?: (index: number) => void;
 }
 
 export default function Lightbox({
@@ -20,6 +23,9 @@ export default function Lightbox({
   onPrev,
   hasNext,
   hasPrev,
+  images,
+  currentIndex,
+  onNavigate,
 }: LightboxProps) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -35,8 +41,11 @@ export default function Lightbox({
   const [showControls, setShowControls] = useState(true);
   const [showFullExif, setShowFullExif] = useState(false);
 
+  const filmstripRef = useRef<HTMLDivElement>(null);
+
   const isLoaded = loadedUrl === image.fullUrl;
   const isZoomed = zoom > 1;
+  const showFilmstrip = images && currentIndex !== undefined && onNavigate && images.length > 1;
 
   // Reset zoom, position, and exif panel when image changes
   useEffect(() => {
@@ -44,6 +53,16 @@ export default function Lightbox({
     setPosition({ x: 0, y: 0 });
     setShowFullExif(false);
   }, [image.fullUrl]);
+
+  // Auto-scroll filmstrip to active thumbnail
+  useEffect(() => {
+    if (showFilmstrip && filmstripRef.current) {
+      const active = filmstripRef.current.querySelector('[data-active="true"]');
+      if (active) {
+        active.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [currentIndex, showFilmstrip]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -285,7 +304,7 @@ export default function Lightbox({
       {/* Image container */}
       <div
         ref={containerRef}
-        className={`max-w-[90vw] max-h-[90vh] relative ${isZoomed ? 'cursor-grab' : 'cursor-zoom-in'} ${isDragging ? 'cursor-grabbing' : ''}`}
+        className={`max-w-[90vw] ${showFilmstrip && !isZoomed ? 'max-h-[calc(90vh-80px)]' : 'max-h-[90vh]'} relative ${isZoomed ? 'cursor-grab' : 'cursor-zoom-in'} ${isDragging ? 'cursor-grabbing' : ''}`}
         onWheel={handleWheel}
         onDoubleClick={handleDoubleClick}
         onMouseDown={handleMouseDown}
@@ -302,7 +321,7 @@ export default function Lightbox({
           key={image.fullUrl}
           src={image.fullUrl}
           alt={image.filename}
-          className={`max-w-[90vw] max-h-[90vh] object-contain select-none transition-opacity duration-200 ${
+          className={`max-w-[90vw] ${showFilmstrip && !isZoomed ? 'max-h-[calc(90vh-80px)]' : 'max-h-[90vh]'} object-contain select-none transition-opacity duration-200 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
@@ -446,6 +465,44 @@ export default function Lightbox({
           {!showFullExif && (image.exif.dimensions || image.exif.dateTaken) && (
             <div className="mt-1 text-white/40 text-center">tap for more</div>
           )}
+        </div>
+      )}
+
+      {/* Filmstrip */}
+      {showFilmstrip && showControls && !isZoomed && (
+        <div
+          className="absolute bottom-0 left-0 right-0 z-20 bg-black/70 backdrop-blur-sm safe-bottom"
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+        >
+          <div
+            ref={filmstripRef}
+            className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-hide"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', paddingLeft: 'calc(50vw - 28px)', paddingRight: 'calc(50vw - 28px)' }}
+          >
+            {images!.map((img, idx) => (
+              <button
+                key={img.path || idx}
+                data-active={idx === currentIndex}
+                onClick={() => onNavigate!(idx)}
+                className={`flex-shrink-0 h-14 rounded overflow-hidden transition-all ${
+                  idx === currentIndex
+                    ? 'ring-2 ring-white opacity-100'
+                    : 'opacity-50 hover:opacity-80'
+                }`}
+              >
+                <img
+                  src={img.thumbnailUrl}
+                  alt={img.filename}
+                  className="h-full w-auto object-cover"
+                  draggable={false}
+                />
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -95,6 +95,9 @@ export default function SearchPage() {
           }}
           hasNext={lightboxIndex < results.length - 1}
           hasPrev={lightboxIndex > 0}
+          images={results}
+          currentIndex={lightboxIndex}
+          onNavigate={(idx) => setLightboxIndex(idx)}
         />
       )}
     </div>

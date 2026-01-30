@@ -24,6 +24,12 @@ export function useLightbox(images: ImageInfo[]) {
     }
   }, [currentIndex]);
 
+  const navigateTo = useCallback((index: number) => {
+    if (index >= 0 && index < images.length) {
+      setCurrentIndex(index);
+    }
+  }, [images.length]);
+
   useEffect(() => {
     if (currentIndex === null) return;
 
@@ -45,6 +51,7 @@ export function useLightbox(images: ImageInfo[]) {
     close,
     next,
     prev,
+    navigateTo,
     hasNext: currentIndex !== null && currentIndex < images.length - 1,
     hasPrev: currentIndex !== null && currentIndex > 0,
   };
