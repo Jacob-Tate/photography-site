@@ -334,15 +334,12 @@ function provider.processRenderedPhotos(functionContext, exportContext)
   -- Try multiple ways to get the collection and its settings
   local settings = nil
   local remoteId = nil
-  local debugParts = {}
 
   -- Method 1: exportContext.publishedCollection (direct property)
   if exportContext.publishedCollection then
-    table.insert(debugParts, "Method1: found publishedCollection")
     local collInfo = exportContext.publishedCollection:getCollectionInfoSummary()
     if collInfo and collInfo.collectionSettings then
       settings = collInfo.collectionSettings
-      table.insert(debugParts, "settings from Method1")
     end
     remoteId = exportContext.publishedCollection:getRemoteId()
   end
@@ -350,10 +347,8 @@ function provider.processRenderedPhotos(functionContext, exportContext)
   -- Method 2: publishedCollectionInfo
   if not settings and exportContext.publishedCollectionInfo then
     local info = exportContext.publishedCollectionInfo
-    table.insert(debugParts, "Method2: has publishedCollectionInfo")
 
     if info.publishedCollection then
-      table.insert(debugParts, "has info.publishedCollection")
       local collInfo = info.publishedCollection:getCollectionInfoSummary()
       if collInfo and collInfo.collectionSettings then
         settings = collInfo.collectionSettings
@@ -365,29 +360,12 @@ function provider.processRenderedPhotos(functionContext, exportContext)
 
     if not settings and info.collectionSettings then
       settings = info.collectionSettings
-      table.insert(debugParts, "settings from info.collectionSettings")
     end
 
     if not remoteId and info.remoteId then
       remoteId = info.remoteId
     end
   end
-
-  -- Method 3: Try to get from the first rendition's publishedPhoto
-  if not settings then
-    for _, rendition in exportContext:renditions() do
-      if rendition.publishedPhotoId then
-        table.insert(debugParts, "Method3: found publishedPhotoId: " .. tostring(rendition.publishedPhotoId))
-        break
-      end
-    end
-  end
-
-  table.insert(debugParts, "Final - settings: " .. tostring(settings ~= nil))
-  table.insert(debugParts, "destination: " .. tostring(settings and settings.destination))
-  table.insert(debugParts, "remoteId: " .. tostring(remoteId))
-
-  LrDialogs.message("Upload Debug", table.concat(debugParts, "\n"), "info")
 
   -- Priority: collectionSettings.destination > remoteId
   if settings and settings.destination and settings.destination ~= "" then
