@@ -180,4 +180,20 @@ function UploadUtils.getAlbums(serverUrl)
   return data
 end
 
+function UploadUtils.setAlbumPassword(serverUrl, apiKey, albumPath, password)
+  local url = serverUrl .. '/api/manage/password'
+  local body = json_encode({ albumPath = albumPath, password = password or '' })
+  local headers = {
+    { field = 'Content-Type', value = 'application/json' },
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.post(url, body, headers)
+
+  if not result then return false, 'Network error' end
+  if hdrs and hdrs.status and hdrs.status >= 400 then return false, 'Failed to set password' end
+
+  return true
+end
+
 return UploadUtils

@@ -57,4 +57,39 @@ router.post('/delete', apiKeyAuth, (req, res) => {
   }
 });
 
+// POST /api/manage/password
+router.post('/password', apiKeyAuth, (req, res) => {
+  const { albumPath, password } = req.body;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const passwordFile = path.join(resolvedDir, 'password.txt');
+
+  try {
+    if (password && password.trim() !== '') {
+      fs.mkdirSync(resolvedDir, { recursive: true });
+      fs.writeFileSync(passwordFile, password.trim(), 'utf-8');
+    } else {
+      if (fs.existsSync(passwordFile)) {
+        fs.unlinkSync(passwordFile);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Password update error:', err);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+});
+
 export default router;

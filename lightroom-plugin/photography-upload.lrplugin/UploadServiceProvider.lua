@@ -223,6 +223,20 @@ function provider.updateCollectionSettings(publishSettings, info)
       collection:setRemoteId(settings.destination)
     end)
   end
+
+  LrTasks.startAsyncTask(function()
+    local serverUrl = publishSettings.serverUrl
+    local apiKey = publishSettings.apiKey
+    local destination = settings and settings.destination
+    local password = settings and settings.password or ''
+
+    if serverUrl and apiKey and destination then
+      local ok, err = UploadUtils.setAlbumPassword(serverUrl, apiKey, destination, password)
+      if not ok then
+        LrDialogs.message('Password Error', err or 'Could not update album password', 'warning')
+      end
+    end
+  end)
 end
 
 function provider.viewForCollectionSettings(f, publishSettings, info)
@@ -252,9 +266,13 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
     settings.destination = 'albums/' .. parentSlug .. albumSlug
   end
 
+  if not settings.password then
+    settings.password = ''
+  end
+
   return f:view {
     bind_to_object = settings,
-    
+
     f:row {
       f:static_text {
         title = 'Album Path:',
@@ -267,6 +285,24 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
         },
         f:static_text {
           title = "Must start with 'albums/'",
+          font = "<system/small>",
+          text_color = import 'LrColor'(0.6, 0.6, 0.6),
+        },
+      }
+    },
+
+    f:row {
+      f:static_text {
+        title = 'Password:',
+        alignment = 'right',
+      },
+      f:column {
+        f:password_field {
+          value = bind 'password',
+          width_in_chars = 40,
+        },
+        f:static_text {
+          title = "Leave blank for no password",
           font = "<system/small>",
           text_color = import 'LrColor'(0.6, 0.6, 0.6),
         },
