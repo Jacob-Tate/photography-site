@@ -140,3 +140,25 @@ export async function fetchTags(): Promise<{ tags: TagInfo[] }> {
   if (!res.ok) throw new Error('Failed to fetch tags');
   return res.json();
 }
+
+export interface StatsData {
+  totalPhotos: number;
+  totalAlbums: number;
+  totalGroups: number;
+  diskUsageBytes: number;
+  cameras: { name: string; count: number }[];
+  lenses: { name: string; count: number }[];
+  focalLengths: { name: string; count: number }[];
+  apertures: { name: string; count: number }[];
+  isos: { name: string; count: number }[];
+  byYear: { year: string; count: number }[];
+  byHour: number[];
+  geotaggedCount: number;
+  keywordedCount: number;
+}
+
+export async function fetchStats(): Promise<StatsData> {
+  const res = await fetch('/api/stats');
+  if (!res.ok) throw new Error('Failed to fetch stats');
+  return res.json();
+}

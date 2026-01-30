@@ -11,6 +11,7 @@ A self-hosted photography portfolio and gallery application with album managemen
 - Interactive map showing geotagged photos
 - Keyword search across all images
 - Tag cloud showing all keywords sized by frequency
+- Stats dashboard with gear usage, shooting times, and storage overview
 - Shareable links for albums and individual images
 - Download individual images or full albums as ZIP
 - Automatic thumbnail generation
@@ -109,6 +110,7 @@ Click the share button on any album or in the lightbox to copy a shareable link 
 | `/api/search` | Keyword search |
 | `/api/tags` | Keyword tag cloud data |
 | `/api/map` | Geotagged image data |
+| `/api/stats` | Photography stats and analytics |
 | `/api/auth` | Album password authentication |
 | `/api/upload` | Image upload (LAN only) |
 | `/api/manage/delete` | Delete a photo (API key required) |

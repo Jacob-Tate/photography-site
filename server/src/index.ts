@@ -13,6 +13,7 @@ import manageRouter from './routes/manage';
 import mapRouter from './routes/map';
 import searchRouter from './routes/search';
 import tagsRouter from './routes/tags';
+import statsRouter from './routes/stats';
 import { preGenerateThumbnails } from './services/thumbnailQueue';
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/manage', manageRouter);
 app.use('/api/map', mapRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/tags', tagsRouter);
+app.use('/api/stats', statsRouter);
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '../../client/dist');
