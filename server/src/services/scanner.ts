@@ -5,6 +5,7 @@ import exifReader from 'exif-reader';
 import iptcReader from 'iptc-reader';
 import { IMAGE_EXTENSIONS, PORTFOLIO_DIR, ALBUMS_DIR } from '../config';
 import { ImageInfo, AlbumInfo, GroupInfo, AlbumTree, ExifData } from '../types';
+import { renderMarkdown } from '../services/markdown';
 
 interface CachedMetadata {
   mtimeMs: number;
@@ -293,6 +294,15 @@ export function listImageFiles(dir: string): string[] {
     .sort();
 }
 
+async function getImageCaption(filePath: string): Promise<string | undefined> {
+  const mdPath = filePath.replace(/\.[^.]+$/, '.md');
+  if (fs.existsSync(mdPath)) {
+    const raw = fs.readFileSync(mdPath, 'utf-8');
+    return await renderMarkdown(raw);
+  }
+  return undefined;
+}
+
 export async function scanPortfolio(): Promise<ImageInfo[]> {
   const files = listImageFiles(PORTFOLIO_DIR);
   const images: ImageInfo[] = [];
@@ -300,6 +310,7 @@ export async function scanPortfolio(): Promise<ImageInfo[]> {
   for (const filename of files) {
     const filePath = path.join(PORTFOLIO_DIR, filename);
     const { width, height, exif } = await getImageMetadata(filePath);
+    const caption = await getImageCaption(filePath);
     images.push({
       filename,
       path: `portfolio/${filename}`,
@@ -309,6 +320,7 @@ export async function scanPortfolio(): Promise<ImageInfo[]> {
       fullUrl: `/api/images/full/portfolio/${filename}`,
       downloadUrl: `/api/images/download/portfolio/${filename}`,
       exif,
+      caption,
     });
   }
 
@@ -427,6 +439,7 @@ export async function scanAlbumImages(albumPath: string): Promise<ImageInfo[]> {
   for (const filename of files) {
     const filePath = path.join(fullDir, filename);
     const { width, height, exif } = await getImageMetadata(filePath);
+    const caption = await getImageCaption(filePath);
     const imgPath = `${albumPath}/${filename}`;
     images.push({
       filename,
@@ -437,6 +450,7 @@ export async function scanAlbumImages(albumPath: string): Promise<ImageInfo[]> {
       fullUrl: `/api/images/full/${imgPath}`,
       downloadUrl: `/api/images/download/${imgPath}`,
       exif,
+      caption,
     });
   }
 

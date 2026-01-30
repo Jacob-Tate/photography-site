@@ -346,10 +346,23 @@ export default function Lightbox({
         </div>
       )}
 
+      {/* Caption panel */}
+      {isLoaded && showControls && !isZoomed && image.caption && (
+        <div
+          className={`absolute left-4 z-20 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-white/90 max-w-[340px] max-h-[200px] overflow-y-auto prose prose-invert prose-sm ${showFilmstrip ? 'bottom-[88px]' : 'bottom-4 safe-bottom'}`}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          dangerouslySetInnerHTML={{ __html: image.caption }}
+        />
+      )}
+
       {/* EXIF data panel */}
       {isLoaded && showControls && image.exif && (
         <div
-          className="absolute bottom-4 right-4 safe-bottom bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] cursor-pointer select-none"
+          className={`absolute right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] cursor-pointer select-none ${showFilmstrip && !isZoomed ? 'bottom-[88px]' : 'bottom-4 safe-bottom'}`}
           onClick={(e) => { e.stopPropagation(); setShowFullExif(!showFullExif); }}
           onTouchEnd={(e) => e.stopPropagation()}
         >

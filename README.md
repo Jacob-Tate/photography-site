@@ -18,6 +18,7 @@ A self-hosted photography portfolio and gallery application with album managemen
 - Lightroom plugin for uploading directly from Adobe Lightroom (LAN only)
 - Progressive Web App (installable on mobile)
 - Markdown descriptions for albums
+- Per-image markdown captions displayed in the lightbox
 
 ## Tech Stack
 
@@ -74,6 +75,7 @@ photos/
   albums/
     album-name/       # A standalone album
       image.jpg
+      image.md        # Optional image caption (markdown, shown in lightbox)
       README.md       # Optional album description (markdown)
       password.txt    # Optional, protects the album with a password
       cover.txt       # Optional, filename of the album cover image
@@ -89,6 +91,7 @@ photos/
 - Add a `password.txt` file containing a password to protect an album (cover image is hidden for protected albums)
 - Add a `cover.txt` file containing an image filename to set a custom album cover (defaults to the first image)
 - Add a `README.md` to any album for a description displayed on the album page
+- Add a `.md` file with the same name as an image (e.g. `DSC1234.md` next to `DSC1234.jpg`) for a caption shown in the lightbox
 - Thumbnails are generated automatically on first access
 - Albums with date-prefixed names (`YYYYMMDD`, e.g. `20250115_pax_east`) are sorted newest-first
 

@@ -30,6 +30,7 @@ export interface ImageInfo {
   fullUrl: string;
   downloadUrl: string;
   exif?: ExifData;
+  caption?: string;
 }
 
 export interface AlbumInfo {
