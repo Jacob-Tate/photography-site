@@ -26,7 +26,6 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
   const longPressTriggered = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
-  const activeClusterBounds = useRef<L.LatLngBounds | null>(null);
   const holdingEl = useRef<HTMLElement | null>(null);
 
   const clearLongPress = useCallback(() => {
@@ -39,7 +38,6 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       holdingEl.current = null;
     }
     pointerStart.current = null;
-    activeClusterBounds.current = null;
   }, []);
 
   useEffect(() => {
@@ -97,13 +95,14 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       markers.addLayer(marker);
     });
 
-    // Cluster click → open images (unless long press already triggered zoom)
+    // Cluster click → open images, or zoom if long press
     markers.on('clusterclick', (e: L.LeafletEvent) => {
+      const cluster = (e as any).layer;
       if (longPressTriggered.current) {
         longPressTriggered.current = false;
+        map.fitBounds(cluster.getBounds(), { padding: [50, 50] });
         return;
       }
-      const cluster = (e as any).layer;
       const childMarkers: L.Marker[] = cluster.getAllChildMarkers();
       const allImages: MapImage[] = [];
       for (const m of childMarkers) {
@@ -128,50 +127,19 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       target.classList.add('holding');
       holdingEl.current = target;
 
-      // Find the cluster layer for this DOM element to get its bounds
-      // We walk Leaflet's internal structures to match the DOM element
-      let clusterBounds: L.LatLngBounds | null = null;
-      markers.eachLayer((layer: L.Layer) => {
-        // marker cluster layers have _icon property pointing to DOM element
-        if ((layer as any)._icon === target || target.contains((layer as any)._icon) || (layer as any)._icon?.contains(target)) {
-          if (typeof (layer as any).getBounds === 'function') {
-            clusterBounds = (layer as any).getBounds();
-          }
-        }
-      });
-
-      // Also check cluster parents
-      if (!clusterBounds) {
-        // Try to find via the top-level clusters
-        const findCluster = (group: any): L.LatLngBounds | null => {
-          if (!group._featureGroup) return null;
-          for (const id in group._featureGroup._layers) {
-            const l = group._featureGroup._layers[id];
-            if (l._icon === target || target.contains(l._icon) || l._icon?.contains(target)) {
-              if (typeof l.getBounds === 'function') {
-                return l.getBounds();
-              }
-            }
-          }
-          return null;
-        };
-        clusterBounds = findCluster(markers);
-      }
-
-      activeClusterBounds.current = clusterBounds;
-
       longPressTimer.current = setTimeout(() => {
         longPressTriggered.current = true;
         if (holdingEl.current) {
           holdingEl.current.classList.remove('holding');
           holdingEl.current = null;
         }
-        if (activeClusterBounds.current) {
-          map.fitBounds(activeClusterBounds.current, { padding: [50, 50] });
-        }
-        pointerStart.current = null;
-        activeClusterBounds.current = null;
       }, 500);
+    };
+
+    const onContextMenu = (e: Event) => {
+      if ((e.target as HTMLElement).closest('.marker-cluster')) {
+        e.preventDefault();
+      }
     };
 
     const onPointerUp = () => clearLongPress();
@@ -190,12 +158,14 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
     container.addEventListener('pointerup', onPointerUp);
     container.addEventListener('pointercancel', onPointerCancel);
     container.addEventListener('pointermove', onPointerMove);
+    container.addEventListener('contextmenu', onContextMenu);
 
     return () => {
       container.removeEventListener('pointerdown', onPointerDown);
       container.removeEventListener('pointerup', onPointerUp);
       container.removeEventListener('pointercancel', onPointerCancel);
       container.removeEventListener('pointermove', onPointerMove);
+      container.removeEventListener('contextmenu', onContextMenu);
       clearLongPress();
       map.removeLayer(markers);
     };
@@ -322,30 +292,94 @@ export default function MapPage() {
             </button>
 
             <h2 className="text-white text-lg mb-4 text-center">
-              {selectedImages.length} photos at this location
-              {selectedImages[0].albumName && (
-                <span className="text-white/50 ml-2">from {selectedImages[0].albumName}</span>
-              )}
+              {selectedImages.length} photos
+              {(() => {
+                const albums = [...new Set(selectedImages.map(img => img.albumName).filter(Boolean))];
+                if (albums.length === 0) return null;
+                if (albums.length === 1) return <span className="text-white/50 ml-2">from {albums[0]}</span>;
+                return <span className="text-white/50 ml-2">from {albums.length} albums</span>;
+              })()}
             </h2>
 
-            <div
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {selectedImages.map((img, idx) => (
-                <div
-                  key={img.path}
-                  className="aspect-square cursor-pointer overflow-hidden rounded-lg hover:ring-2 hover:ring-white/50 transition-all"
-                  onClick={() => setLightboxIndex(idx + 1)}
-                >
-                  <img
-                    src={img.thumbnailUrl}
-                    alt={img.filename}
-                    className="w-full h-full object-cover"
-                  />
+            {(() => {
+              const albums = [...new Set(selectedImages.map(img => img.albumName).filter(Boolean))];
+              if (albums.length <= 1) {
+                return (
+                  <div
+                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {selectedImages.map((img, idx) => (
+                      <div
+                        key={img.path}
+                        className="aspect-square cursor-pointer overflow-hidden rounded-lg hover:ring-2 hover:ring-white/50 transition-all"
+                        onClick={() => setLightboxIndex(idx + 1)}
+                      >
+                        <img
+                          src={img.thumbnailUrl}
+                          alt={img.filename}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              return (
+                <div onClick={(e) => e.stopPropagation()}>
+                  {albums.map(albumName => {
+                    const albumImages = selectedImages.filter(img => img.albumName === albumName);
+                    return (
+                      <div key={albumName} className="mb-6">
+                        <h3 className="text-white/70 text-sm font-medium mb-2">{albumName} <span className="text-white/40">({albumImages.length})</span></h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                          {albumImages.map(img => {
+                            const idx = selectedImages.indexOf(img);
+                            return (
+                              <div
+                                key={img.path}
+                                className="aspect-square cursor-pointer overflow-hidden rounded-lg hover:ring-2 hover:ring-white/50 transition-all"
+                                onClick={() => setLightboxIndex(idx + 1)}
+                              >
+                                <img
+                                  src={img.thumbnailUrl}
+                                  alt={img.filename}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Images without album */}
+                  {selectedImages.some(img => !img.albumName) && (
+                    <div className="mb-6">
+                      <h3 className="text-white/70 text-sm font-medium mb-2">Portfolio <span className="text-white/40">({selectedImages.filter(img => !img.albumName).length})</span></h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                        {selectedImages.filter(img => !img.albumName).map(img => {
+                          const idx = selectedImages.indexOf(img);
+                          return (
+                            <div
+                              key={img.path}
+                              className="aspect-square cursor-pointer overflow-hidden rounded-lg hover:ring-2 hover:ring-white/50 transition-all"
+                              onClick={() => setLightboxIndex(idx + 1)}
+                            >
+                              <img
+                                src={img.thumbnailUrl}
+                                alt={img.filename}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
