@@ -129,3 +129,14 @@ export async function searchImages(query: string): Promise<{ results: SearchResu
   if (!res.ok) throw new Error('Search failed');
   return res.json();
 }
+
+export interface TagInfo {
+  tag: string;
+  count: number;
+}
+
+export async function fetchTags(): Promise<{ tags: TagInfo[] }> {
+  const res = await fetch('/api/tags');
+  if (!res.ok) throw new Error('Failed to fetch tags');
+  return res.json();
+}

@@ -43,6 +43,14 @@ export default function Layout() {
           >
             Map
           </Link>
+          <Link
+            to="/tags"
+            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center ${
+              location.pathname === '/tags' ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
+            } transition-colors`}
+          >
+            Tags
+          </Link>
 
           {/* Search */}
           <div className="ml-auto flex items-center">
