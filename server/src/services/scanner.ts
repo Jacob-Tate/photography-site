@@ -16,7 +16,7 @@ interface CachedMetadata {
 const metadataCache = new Map<string, CachedMetadata>();
 
 export function isHiddenDir(name: string): boolean {
-  return name.startsWith('.') || name === '@eadir';
+  return name.startsWith('.') || name === '@eadir' || name === '@EaDir';
 }
 
 function isImageFile(filename: string): boolean {
