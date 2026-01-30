@@ -83,9 +83,10 @@ photos/
 - Place featured images in `portfolio/`
 - Create folders under `albums/` for albums
 - Nest a folder inside another to create album groups
-- Add a `password.txt` file containing a password to protect an album
+- Add a `password.txt` file containing a password to protect an album (cover image is hidden for protected albums)
 - Add a `README.md` to any album for a description displayed on the album page
 - Thumbnails are generated automatically on first access
+- Albums with date-prefixed names (`YYYYMMDD`, e.g. `20250115_pax_east`) are sorted newest-first
 
 ## Sharing
 
@@ -106,11 +107,20 @@ Click the share button on any album or in the lightbox to copy a shareable link 
 | `/api/map` | Geotagged image data |
 | `/api/auth` | Album password authentication |
 | `/api/upload` | Image upload (LAN only) |
-| `/api/manage` | Management endpoints |
+| `/api/manage/delete` | Delete a photo (API key required) |
+| `/api/manage/password` | Set or remove an album password (API key required) |
 
 ## Lightroom Plugin
 
-A Lightroom Classic plugin is included in `lightroom-plugin/` for uploading images directly from Lightroom to the server over the local network. See the plugin directory for installation instructions.
+A Lightroom Classic plugin is included in `lightroom-plugin/` for uploading images directly from Lightroom to the server over the local network.
+
+Features:
+- Publish photos to any album on the server
+- Sync album structure from the server with "Sync Albums Now"
+- Set or remove album passwords from the album settings dialog
+- Delete photos from the server when removing them from a published collection
+
+See the plugin directory for installation instructions.
 
 ## Configuration
 
