@@ -10,5 +10,12 @@ return {
     file = 'UploadServiceProvider.lua',
   },
   
+  LrLibraryMenuItems = {
+    {
+      title = 'Set as Cover Image',
+      file = 'SetCoverImage.lua',
+    },
+  },
+
   VERSION = { major = 1, minor = 3, revision = 0 },
 }

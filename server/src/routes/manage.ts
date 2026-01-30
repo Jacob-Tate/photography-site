@@ -92,4 +92,39 @@ router.post('/password', apiKeyAuth, (req, res) => {
   }
 });
 
+// POST /api/manage/cover
+router.post('/cover', apiKeyAuth, (req, res) => {
+  const { albumPath, filename } = req.body;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const coverFile = path.join(resolvedDir, 'cover.txt');
+
+  try {
+    if (filename && filename.trim() !== '') {
+      fs.mkdirSync(resolvedDir, { recursive: true });
+      fs.writeFileSync(coverFile, filename.trim(), 'utf-8');
+    } else {
+      if (fs.existsSync(coverFile)) {
+        fs.unlinkSync(coverFile);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Cover update error:', err);
+    res.status(500).json({ error: 'Failed to update cover image' });
+  }
+});
+
 export default router;

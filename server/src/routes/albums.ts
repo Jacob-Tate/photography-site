@@ -97,12 +97,22 @@ router.get('/*', async (req, res) => {
           ).sort();
           const subPath = `${albumPath}/${sub}`;
           const subHasPassword = fs.existsSync(path.join(subDir, 'password.txt'));
+
+          let coverFilename = subImages[0];
+          const coverFile = path.join(subDir, 'cover.txt');
+          if (fs.existsSync(coverFile)) {
+            const coverName = fs.readFileSync(coverFile, 'utf-8').trim();
+            if (coverName && subImages.includes(coverName)) {
+              coverFilename = coverName;
+            }
+          }
+
           return {
             name: formatName(sub),
             slug: sub,
             path: subPath,
-            coverImage: subImages.length > 0 && !subHasPassword
-              ? `/api/images/thumbnail/${subPath}/${subImages[0]}`
+            coverImage: subImages.length > 0 && !subHasPassword && coverFilename
+              ? `/api/images/thumbnail/${subPath}/${coverFilename}`
               : null,
             imageCount: subImages.length,
             hasPassword: subHasPassword,

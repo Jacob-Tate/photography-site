@@ -317,17 +317,29 @@ function albumSort(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
+function getCoverImage(albumDir: string, images: string[]): string | undefined {
+  const coverFile = path.join(albumDir, 'cover.txt');
+  if (fs.existsSync(coverFile)) {
+    const coverName = fs.readFileSync(coverFile, 'utf-8').trim();
+    if (coverName && images.includes(coverName)) {
+      return coverName;
+    }
+  }
+  return images[0];
+}
+
 function buildAlbumInfo(albumDir: string, albumPath: string): AlbumInfo {
   const name = path.basename(albumDir);
   const images = listImageFiles(albumDir);
   const hasPassword = fs.existsSync(path.join(albumDir, 'password.txt'));
+  const cover = images.length > 0 ? getCoverImage(albumDir, images) : undefined;
 
   return {
     name: formatAlbumName(name),
     slug: name,
     path: albumPath,
-    coverImage: images.length > 0 && !hasPassword
-      ? `/api/images/thumbnail/${albumPath}/${images[0]}`
+    coverImage: cover && !hasPassword
+      ? `/api/images/thumbnail/${albumPath}/${cover}`
       : null,
     imageCount: images.length,
     hasPassword,

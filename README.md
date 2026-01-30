@@ -74,6 +74,7 @@ photos/
       image.jpg
       README.md       # Optional album description (markdown)
       password.txt    # Optional, protects the album with a password
+      cover.txt       # Optional, filename of the album cover image
     group-name/       # A group containing multiple albums
       sub-album/
         image.jpg
@@ -84,6 +85,7 @@ photos/
 - Create folders under `albums/` for albums
 - Nest a folder inside another to create album groups
 - Add a `password.txt` file containing a password to protect an album (cover image is hidden for protected albums)
+- Add a `cover.txt` file containing an image filename to set a custom album cover (defaults to the first image)
 - Add a `README.md` to any album for a description displayed on the album page
 - Thumbnails are generated automatically on first access
 - Albums with date-prefixed names (`YYYYMMDD`, e.g. `20250115_pax_east`) are sorted newest-first
@@ -109,6 +111,7 @@ Click the share button on any album or in the lightbox to copy a shareable link 
 | `/api/upload` | Image upload (LAN only) |
 | `/api/manage/delete` | Delete a photo (API key required) |
 | `/api/manage/password` | Set or remove an album password (API key required) |
+| `/api/manage/cover` | Set or remove an album cover image (API key required) |
 
 ## Lightroom Plugin
 
@@ -118,6 +121,7 @@ Features:
 - Publish photos to any album on the server
 - Sync album structure from the server with "Sync Albums Now"
 - Set or remove album passwords from the album settings dialog
+- Set an album cover image via Library > Plugin Extras > Set as Cover Image
 - Delete photos from the server when removing them from a published collection
 
 See the plugin directory for installation instructions.

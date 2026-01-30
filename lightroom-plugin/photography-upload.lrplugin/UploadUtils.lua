@@ -196,4 +196,20 @@ function UploadUtils.setAlbumPassword(serverUrl, apiKey, albumPath, password)
   return true
 end
 
+function UploadUtils.setCoverImage(serverUrl, apiKey, albumPath, filename)
+  local url = serverUrl .. '/api/manage/cover'
+  local body = json_encode({ albumPath = albumPath, filename = filename or '' })
+  local headers = {
+    { field = 'Content-Type', value = 'application/json' },
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.post(url, body, headers)
+
+  if not result then return false, 'Network error' end
+  if hdrs and hdrs.status and hdrs.status >= 400 then return false, 'Failed to set cover image' end
+
+  return true
+end
+
 return UploadUtils
