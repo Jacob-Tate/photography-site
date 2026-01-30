@@ -53,4 +53,10 @@ app.listen(config.port, () => {
   console.log(`Photos directory: ${config.photosDir}`);
   preGenerateThumbnails();
   preWarmMetadataCache();
+
+  // Re-scan for new images every 5 minutes
+  setInterval(() => {
+    preGenerateThumbnails();
+    preWarmMetadataCache();
+  }, 5 * 60 * 1000);
 });

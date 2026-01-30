@@ -493,12 +493,28 @@ export async function preWarmMetadataCache(): Promise<void> {
     return;
   }
 
-  console.log(`[metadata] Pre-warming metadata cache for ${entries.length} images...`);
+  // Count how many actually need parsing (not already cached with matching mtime)
+  const pending = entries.filter(filePath => {
+    try {
+      const mtimeMs = fs.statSync(filePath).mtimeMs;
+      const cached = metadataCache.get(filePath);
+      return !cached || cached.mtimeMs !== mtimeMs;
+    } catch {
+      return true;
+    }
+  });
+
+  if (pending.length === 0) {
+    console.log(`[metadata] All ${entries.length} images already cached`);
+    return;
+  }
+
+  console.log(`[metadata] Caching ${pending.length} new images (${entries.length} total)...`);
 
   let completed = 0;
   let failed = 0;
 
-  for (const filePath of entries) {
+  for (const filePath of pending) {
     try {
       await getImageMetadata(filePath);
       completed++;
@@ -506,10 +522,10 @@ export async function preWarmMetadataCache(): Promise<void> {
       failed++;
     }
     const done = completed + failed;
-    if (done % 50 === 0 || done === entries.length) {
-      console.log(`[metadata] Progress: ${done}/${entries.length}`);
+    if (done % 50 === 0 || done === pending.length) {
+      console.log(`[metadata] Progress: ${done}/${pending.length}`);
     }
   }
 
-  console.log(`[metadata] Cache warm: ${completed} cached, ${failed} failed`);
+  console.log(`[metadata] Done: ${completed} cached, ${failed} failed`);
 }
