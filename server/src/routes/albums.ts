@@ -2,7 +2,7 @@ import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { renderMarkdown } from '../services/markdown';
-import { scanAlbums, scanAlbumImages, getAlbumReadme, getAlbumDir } from '../services/scanner';
+import { scanAlbums, scanAlbumImages, getAlbumReadme, getAlbumDir, isHiddenDir } from '../services/scanner';
 import { getAlbumPassword, isAlbumUnlocked } from '../services/password';
 import { ALBUMS_DIR, IMAGE_EXTENSIONS } from '../config';
 
@@ -48,7 +48,7 @@ router.get('/*', async (req, res) => {
     const hasImages = entries.some(f => IMAGE_EXTENSIONS.includes(path.extname(f).toLowerCase()));
     const hasSubDirs = entries.some(f => {
       const full = path.join(resolved, f);
-      return fs.statSync(full).isDirectory() && !f.startsWith('.');
+      return fs.statSync(full).isDirectory() && !isHiddenDir(f);
     });
 
     if (hasImages) {
@@ -87,7 +87,7 @@ router.get('/*', async (req, res) => {
       const subAlbums = entries
         .filter(f => {
           const full = path.join(resolved, f);
-          return fs.statSync(full).isDirectory() && !f.startsWith('.');
+          return fs.statSync(full).isDirectory() && !isHiddenDir(f);
         })
         .sort((a, b) => datePattern.test(a) && datePattern.test(b) ? b.localeCompare(a) : a.localeCompare(b))
         .map(sub => {

@@ -160,6 +160,15 @@ body {
   background: transparent;
 }
 
+.marker-cluster {
+  transition: transform 0.15s;
+  touch-action: manipulation;
+}
+
+.marker-cluster.holding {
+  transform: scale(1.15);
+}
+
 .custom-cluster .cluster-icon {
   @apply bg-white text-neutral-900 font-bold rounded-full flex items-center justify-center shadow-lg;
   width: 40px;

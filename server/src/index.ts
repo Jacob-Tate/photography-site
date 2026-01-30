@@ -15,6 +15,7 @@ import searchRouter from './routes/search';
 import tagsRouter from './routes/tags';
 import statsRouter from './routes/stats';
 import { preGenerateThumbnails } from './services/thumbnailQueue';
+import { preWarmMetadataCache } from './services/scanner';
 
 const app = express();
 
@@ -51,4 +52,5 @@ app.listen(config.port, () => {
   console.log(`Server running on http://localhost:${config.port}`);
   console.log(`Photos directory: ${config.photosDir}`);
   preGenerateThumbnails();
+  preWarmMetadataCache();
 });

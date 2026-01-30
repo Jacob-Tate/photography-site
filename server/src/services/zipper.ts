@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { Response } from 'express';
 import { IMAGE_EXTENSIONS } from '../config';
+import { isHiddenDir } from './scanner';
 
 export function streamAlbumZip(albumDir: string, albumName: string, res: Response): void {
   const archive = archiver('zip', { zlib: { level: 5 } });
@@ -21,7 +22,7 @@ export function streamAlbumZip(albumDir: string, albumName: string, res: Respons
 
   const files = fs.readdirSync(albumDir).filter(f => {
     const ext = path.extname(f).toLowerCase();
-    return IMAGE_EXTENSIONS.includes(ext) && !f.startsWith('.');
+    return IMAGE_EXTENSIONS.includes(ext) && !isHiddenDir(f);
   });
 
   for (const file of files) {

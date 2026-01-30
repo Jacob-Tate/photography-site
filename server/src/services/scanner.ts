@@ -6,6 +6,19 @@ import iptcReader from 'iptc-reader';
 import { IMAGE_EXTENSIONS, PORTFOLIO_DIR, ALBUMS_DIR } from '../config';
 import { ImageInfo, AlbumInfo, GroupInfo, AlbumTree, ExifData } from '../types';
 
+interface CachedMetadata {
+  mtimeMs: number;
+  width: number;
+  height: number;
+  exif?: ExifData;
+}
+
+const metadataCache = new Map<string, CachedMetadata>();
+
+export function isHiddenDir(name: string): boolean {
+  return name.startsWith('.') || name === '@eadir';
+}
+
 function isImageFile(filename: string): boolean {
   return IMAGE_EXTENSIONS.includes(path.extname(filename).toLowerCase());
 }
@@ -41,6 +54,12 @@ function formatAspectRatio(width: number, height: number): string {
 }
 
 async function getImageMetadata(filePath: string): Promise<{ width: number; height: number; exif?: ExifData }> {
+  const mtimeMs = fs.statSync(filePath).mtimeMs;
+  const cached = metadataCache.get(filePath);
+  if (cached && cached.mtimeMs === mtimeMs) {
+    return { width: cached.width, height: cached.height, exif: cached.exif };
+  }
+
   const metadata = await sharp(filePath).metadata();
   const width = metadata.width || 0;
   const height = metadata.height || 0;
@@ -260,13 +279,17 @@ async function getImageMetadata(filePath: string): Promise<{ width: number; heig
 
   // Only return exif if we have any meaningful data
   const hasData = Object.keys(exif).length > 0;
-  return { width, height, exif: hasData ? exif : undefined };
+  const result = { width, height, exif: hasData ? exif : undefined };
+
+  metadataCache.set(filePath, { mtimeMs, ...result });
+
+  return result;
 }
 
 export function listImageFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
-    .filter(f => isImageFile(f) && !f.startsWith('.'))
+    .filter(f => isImageFile(f) && !isHiddenDir(f))
     .sort();
 }
 
@@ -301,7 +324,7 @@ function hasSubdirectories(dir: string): boolean {
   if (!fs.existsSync(dir)) return false;
   return fs.readdirSync(dir).some(f => {
     const full = path.join(dir, f);
-    return fs.statSync(full).isDirectory() && !f.startsWith('.');
+    return fs.statSync(full).isDirectory() && !isHiddenDir(f);
   });
 }
 
@@ -353,7 +376,7 @@ export function scanAlbums(): AlbumTree {
 
   const entries = fs.readdirSync(ALBUMS_DIR).filter(f => {
     const full = path.join(ALBUMS_DIR, f);
-    return fs.statSync(full).isDirectory() && !f.startsWith('.');
+    return fs.statSync(full).isDirectory() && !isHiddenDir(f);
   }).sort(albumSort);
 
   const groups: GroupInfo[] = [];
@@ -370,7 +393,7 @@ export function scanAlbums(): AlbumTree {
       // It's a group
       const subEntries = fs.readdirSync(entryDir).filter(f => {
         const full = path.join(entryDir, f);
-        return fs.statSync(full).isDirectory() && !f.startsWith('.');
+        return fs.statSync(full).isDirectory() && !isHiddenDir(f);
       }).sort(albumSort);
 
       const groupAlbums = subEntries
@@ -438,4 +461,55 @@ export function getAlbumReadme(albumPath: string): string | undefined {
 
 export function getAlbumDir(albumPath: string): string {
   return path.join(ALBUMS_DIR, albumPath.replace(/^albums\//, ''));
+}
+
+export async function preWarmMetadataCache(): Promise<void> {
+  const entries: string[] = [];
+
+  // Portfolio images
+  for (const file of listImageFiles(PORTFOLIO_DIR)) {
+    entries.push(path.join(PORTFOLIO_DIR, file));
+  }
+
+  // Album images (recursively)
+  if (fs.existsSync(ALBUMS_DIR)) {
+    const walk = (dir: string) => {
+      for (const item of fs.readdirSync(dir)) {
+        if (isHiddenDir(item)) continue;
+        const full = path.join(dir, item);
+        const stat = fs.statSync(full);
+        if (stat.isFile() && IMAGE_EXTENSIONS.includes(path.extname(item).toLowerCase())) {
+          entries.push(full);
+        } else if (stat.isDirectory()) {
+          walk(full);
+        }
+      }
+    };
+    walk(ALBUMS_DIR);
+  }
+
+  if (entries.length === 0) {
+    console.log('[metadata] No images to cache');
+    return;
+  }
+
+  console.log(`[metadata] Pre-warming metadata cache for ${entries.length} images...`);
+
+  let completed = 0;
+  let failed = 0;
+
+  for (const filePath of entries) {
+    try {
+      await getImageMetadata(filePath);
+      completed++;
+    } catch {
+      failed++;
+    }
+    const done = completed + failed;
+    if (done % 50 === 0 || done === entries.length) {
+      console.log(`[metadata] Progress: ${done}/${entries.length}`);
+    }
+  }
+
+  console.log(`[metadata] Cache warm: ${completed} cached, ${failed} failed`);
 }

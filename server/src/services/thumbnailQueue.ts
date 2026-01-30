@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { PORTFOLIO_DIR, ALBUMS_DIR, IMAGE_EXTENSIONS, THUMBNAILS_DIR } from '../config';
-import { listImageFiles } from './scanner';
+import { listImageFiles, isHiddenDir } from './scanner';
 import { ensureThumbnail } from './thumbnail';
 
 interface ImageEntry {
@@ -28,7 +28,7 @@ function collectAllImages(): ImageEntry[] {
 
       // Add image files in this directory
       for (const item of items) {
-        if (item.startsWith('.')) continue;
+        if (isHiddenDir(item)) continue;
         const full = path.join(dir, item);
         const stat = fs.statSync(full);
         if (stat.isFile() && IMAGE_EXTENSIONS.includes(path.extname(item).toLowerCase())) {

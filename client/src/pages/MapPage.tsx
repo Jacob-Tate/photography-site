@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -22,11 +22,31 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
   onMarkerClick: (images: MapImage[]) => void;
 }) {
   const map = useMap();
+  const markerImageMap = useRef(new WeakMap<L.Marker, MapImage[]>());
+  const longPressTriggered = useRef(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const activeClusterBounds = useRef<L.LatLngBounds | null>(null);
+  const holdingEl = useRef<HTMLElement | null>(null);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (holdingEl.current) {
+      holdingEl.current.classList.remove('holding');
+      holdingEl.current = null;
+    }
+    pointerStart.current = null;
+    activeClusterBounds.current = null;
+  }, []);
 
   useEffect(() => {
     const markers = L.markerClusterGroup({
       chunkedLoading: true,
-      spiderfyOnMaxZoom: true,
+      spiderfyOnMaxZoom: false,
+      zoomToBoundsOnClick: false,
       showCoverageOnHover: false,
       maxClusterRadius: 50,
       iconCreateFunction: (cluster) => {
@@ -56,6 +76,8 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       const gps = locationImages[0].exif!.gps!;
       const marker = L.marker([gps.latitude, gps.longitude]);
 
+      markerImageMap.current.set(marker, locationImages);
+
       marker.on('click', () => {
         onMarkerClick(locationImages);
       });
@@ -75,12 +97,109 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       markers.addLayer(marker);
     });
 
+    // Cluster click → open images (unless long press already triggered zoom)
+    markers.on('clusterclick', (e: L.LeafletEvent) => {
+      if (longPressTriggered.current) {
+        longPressTriggered.current = false;
+        return;
+      }
+      const cluster = (e as any).layer;
+      const childMarkers: L.Marker[] = cluster.getAllChildMarkers();
+      const allImages: MapImage[] = [];
+      for (const m of childMarkers) {
+        const imgs = markerImageMap.current.get(m);
+        if (imgs) allImages.push(...imgs);
+      }
+      if (allImages.length > 0) {
+        onMarkerClick(allImages);
+      }
+    });
+
     map.addLayer(markers);
 
+    // Long-press detection via DOM pointer events on cluster icons
+    const container = map.getContainer();
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = (e.target as HTMLElement).closest('.marker-cluster') as HTMLElement | null;
+      if (!target) return;
+
+      pointerStart.current = { x: e.clientX, y: e.clientY };
+      target.classList.add('holding');
+      holdingEl.current = target;
+
+      // Find the cluster layer for this DOM element to get its bounds
+      // We walk Leaflet's internal structures to match the DOM element
+      let clusterBounds: L.LatLngBounds | null = null;
+      markers.eachLayer((layer: L.Layer) => {
+        // marker cluster layers have _icon property pointing to DOM element
+        if ((layer as any)._icon === target || target.contains((layer as any)._icon) || (layer as any)._icon?.contains(target)) {
+          if (typeof (layer as any).getBounds === 'function') {
+            clusterBounds = (layer as any).getBounds();
+          }
+        }
+      });
+
+      // Also check cluster parents
+      if (!clusterBounds) {
+        // Try to find via the top-level clusters
+        const findCluster = (group: any): L.LatLngBounds | null => {
+          if (!group._featureGroup) return null;
+          for (const id in group._featureGroup._layers) {
+            const l = group._featureGroup._layers[id];
+            if (l._icon === target || target.contains(l._icon) || l._icon?.contains(target)) {
+              if (typeof l.getBounds === 'function') {
+                return l.getBounds();
+              }
+            }
+          }
+          return null;
+        };
+        clusterBounds = findCluster(markers);
+      }
+
+      activeClusterBounds.current = clusterBounds;
+
+      longPressTimer.current = setTimeout(() => {
+        longPressTriggered.current = true;
+        if (holdingEl.current) {
+          holdingEl.current.classList.remove('holding');
+          holdingEl.current = null;
+        }
+        if (activeClusterBounds.current) {
+          map.fitBounds(activeClusterBounds.current, { padding: [50, 50] });
+        }
+        pointerStart.current = null;
+        activeClusterBounds.current = null;
+      }, 500);
+    };
+
+    const onPointerUp = () => clearLongPress();
+    const onPointerCancel = () => clearLongPress();
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!pointerStart.current) return;
+      const dx = e.clientX - pointerStart.current.x;
+      const dy = e.clientY - pointerStart.current.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 10) {
+        clearLongPress();
+      }
+    };
+
+    container.addEventListener('pointerdown', onPointerDown);
+    container.addEventListener('pointerup', onPointerUp);
+    container.addEventListener('pointercancel', onPointerCancel);
+    container.addEventListener('pointermove', onPointerMove);
+
     return () => {
+      container.removeEventListener('pointerdown', onPointerDown);
+      container.removeEventListener('pointerup', onPointerUp);
+      container.removeEventListener('pointercancel', onPointerCancel);
+      container.removeEventListener('pointermove', onPointerMove);
+      clearLongPress();
       map.removeLayer(markers);
     };
-  }, [map, images, onMarkerClick]);
+  }, [map, images, onMarkerClick, clearLongPress]);
 
   return null;
 }
