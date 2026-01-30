@@ -83,12 +83,13 @@ router.get('/*', async (req, res) => {
       });
     } else if (hasSubDirs) {
       // It's a group
+      const datePattern = /^\d{8}/;
       const subAlbums = entries
         .filter(f => {
           const full = path.join(resolved, f);
           return fs.statSync(full).isDirectory() && !f.startsWith('.');
         })
-        .sort()
+        .sort((a, b) => datePattern.test(a) && datePattern.test(b) ? b.localeCompare(a) : a.localeCompare(b))
         .map(sub => {
           const subDir = path.join(resolved, sub);
           const subImages = fs.readdirSync(subDir).filter(f =>

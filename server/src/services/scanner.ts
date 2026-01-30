@@ -305,6 +305,18 @@ function hasSubdirectories(dir: string): boolean {
   });
 }
 
+// Sort entries: date-prefixed names (YYYYMMDD) sort newest-first, others alphabetically
+function albumSort(a: string, b: string): number {
+  const datePattern = /^\d{8}/;
+  const aIsDate = datePattern.test(a);
+  const bIsDate = datePattern.test(b);
+
+  if (aIsDate && bIsDate) {
+    return b.localeCompare(a);
+  }
+  return a.localeCompare(b);
+}
+
 function buildAlbumInfo(albumDir: string, albumPath: string): AlbumInfo {
   const name = path.basename(albumDir);
   const images = listImageFiles(albumDir);
@@ -330,7 +342,7 @@ export function scanAlbums(): AlbumTree {
   const entries = fs.readdirSync(ALBUMS_DIR).filter(f => {
     const full = path.join(ALBUMS_DIR, f);
     return fs.statSync(full).isDirectory() && !f.startsWith('.');
-  }).sort();
+  }).sort(albumSort);
 
   const groups: GroupInfo[] = [];
   const topAlbums: AlbumInfo[] = [];
@@ -347,7 +359,7 @@ export function scanAlbums(): AlbumTree {
       const subEntries = fs.readdirSync(entryDir).filter(f => {
         const full = path.join(entryDir, f);
         return fs.statSync(full).isDirectory() && !f.startsWith('.');
-      }).sort();
+      }).sort(albumSort);
 
       const groupAlbums = subEntries
         .filter(sub => hasDirectImages(path.join(entryDir, sub)))
