@@ -314,7 +314,7 @@ function buildAlbumInfo(albumDir: string, albumPath: string): AlbumInfo {
     name: formatAlbumName(name),
     slug: name,
     path: albumPath,
-    coverImage: images.length > 0
+    coverImage: images.length > 0 && !hasPassword
       ? `/api/images/thumbnail/${albumPath}/${images[0]}`
       : null,
     imageCount: images.length,

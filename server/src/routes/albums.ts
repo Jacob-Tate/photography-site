@@ -95,15 +95,16 @@ router.get('/*', async (req, res) => {
             IMAGE_EXTENSIONS.includes(path.extname(f).toLowerCase())
           ).sort();
           const subPath = `${albumPath}/${sub}`;
+          const subHasPassword = fs.existsSync(path.join(subDir, 'password.txt'));
           return {
             name: formatName(sub),
             slug: sub,
             path: subPath,
-            coverImage: subImages.length > 0
+            coverImage: subImages.length > 0 && !subHasPassword
               ? `/api/images/thumbnail/${subPath}/${subImages[0]}`
               : null,
             imageCount: subImages.length,
-            hasPassword: fs.existsSync(path.join(subDir, 'password.txt')),
+            hasPassword: subHasPassword,
           };
         });
 
