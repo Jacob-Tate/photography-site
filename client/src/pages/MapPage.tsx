@@ -102,8 +102,8 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
     markers.on('clustercontextmenu', (evt: L.LeafletEvent) => {
       const e = evt as L.LeafletMouseEvent;
       e.originalEvent.preventDefault(); // Prevent browser context menu
-      const cluster = (evt as any).layer;
-      map.fitBounds(cluster.getBounds(), { padding: [50, 50] });
+      const cluster = (evt as any).layer;  
+      map.fitBounds(cluster.getBounds(), { padding: [50, 50], duration: 0.2 });
     });
 
     map.addLayer(markers);
