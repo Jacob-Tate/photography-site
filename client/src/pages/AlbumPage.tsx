@@ -114,7 +114,7 @@ export default function AlbumPage() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Breadcrumb */}
-      <div className="px-4 py-3 sm:p-4 pb-0 safe-left safe-right">
+      <div className="px-5 py-3 sm:p-4 pb-0 safe-left safe-right">
         <div className="mb-3 sm:mb-4 flex items-center text-sm flex-wrap gap-y-1">
           <Link to="/albums" className="text-neutral-400 hover:text-white active:text-white transition-colors">
             Albums

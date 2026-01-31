@@ -18,7 +18,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen min-h-[100dvh]">
       <nav className="fixed top-0 left-0 right-0 z-40 bg-neutral-950/90 backdrop-blur-sm border-b border-neutral-800 safe-top">
-        <div className="max-w-7xl mx-auto px-4 safe-left safe-right py-3 sm:py-4 flex items-center gap-6 sm:gap-8">
+        <div className="max-w-7xl mx-auto px-5 sm:px-4 safe-left safe-right py-3 sm:py-4 flex items-center gap-6 sm:gap-8">
           <Link
             to="/"
             className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center ${

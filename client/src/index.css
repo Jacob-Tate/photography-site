@@ -23,21 +23,23 @@ body {
   touch-action: pan-x pan-y;
 }
 
-/* Safe area padding utilities */
-.safe-top {
-  padding-top: var(--safe-area-top);
-}
+/* Safe area padding utilities — in components layer so Tailwind utilities (px-5, etc.) can override */
+@layer components {
+  .safe-top {
+    padding-top: var(--safe-area-top);
+  }
 
-.safe-bottom {
-  padding-bottom: var(--safe-area-bottom);
-}
+  .safe-bottom {
+    padding-bottom: var(--safe-area-bottom);
+  }
 
-.safe-left {
-  padding-left: var(--safe-area-left);
-}
+  .safe-left {
+    padding-left: var(--safe-area-left);
+  }
 
-.safe-right {
-  padding-right: var(--safe-area-right);
+  .safe-right {
+    padding-right: var(--safe-area-right);
+  }
 }
 
 /* Prevent text selection on interactive elements */
