@@ -41,6 +41,7 @@ export interface AlbumInfo {
   imageCount: number;
   hasPassword: boolean;
   readme?: string;
+  updatedAt?: number;
 }
 
 export interface GroupInfo {

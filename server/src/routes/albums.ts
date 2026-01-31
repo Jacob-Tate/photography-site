@@ -107,6 +107,14 @@ router.get('/*', async (req, res) => {
             }
           }
 
+          let maxMtime = 0;
+          for (const img of subImages) {
+            try {
+              const mtime = fs.statSync(path.join(subDir, img)).mtimeMs;
+              if (mtime > maxMtime) maxMtime = mtime;
+            } catch { /* skip */ }
+          }
+
           return {
             name: formatName(sub),
             slug: sub,
@@ -116,6 +124,7 @@ router.get('/*', async (req, res) => {
               : null,
             imageCount: subImages.length,
             hasPassword: subHasPassword,
+            updatedAt: maxMtime || undefined,
           };
         });
 

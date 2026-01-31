@@ -390,11 +390,23 @@ function getCoverImage(albumDir: string, images: string[]): string | undefined {
   return images[0];
 }
 
+function getAlbumUpdatedAt(albumDir: string, images: string[]): number {
+  let maxMtime = 0;
+  for (const img of images) {
+    try {
+      const mtime = fs.statSync(path.join(albumDir, img)).mtimeMs;
+      if (mtime > maxMtime) maxMtime = mtime;
+    } catch { /* skip */ }
+  }
+  return maxMtime;
+}
+
 function buildAlbumInfo(albumDir: string, albumPath: string): AlbumInfo {
   const name = path.basename(albumDir);
   const images = listImageFiles(albumDir);
   const hasPassword = fs.existsSync(path.join(albumDir, 'password.txt'));
   const cover = images.length > 0 ? getCoverImage(albumDir, images) : undefined;
+  const updatedAt = getAlbumUpdatedAt(albumDir, images);
 
   return {
     name: formatAlbumName(name),
@@ -405,6 +417,7 @@ function buildAlbumInfo(albumDir: string, albumPath: string): AlbumInfo {
       : null,
     imageCount: images.length,
     hasPassword,
+    updatedAt: updatedAt || undefined,
   };
 }
 

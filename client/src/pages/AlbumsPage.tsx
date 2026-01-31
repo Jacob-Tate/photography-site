@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchAlbumTree, AlbumTree } from '../api/client';
+import { fetchAlbumTree, AlbumTree, AlbumInfo } from '../api/client';
 import AlbumCard from '../components/AlbumCard';
 
 export default function AlbumsPage() {
@@ -14,6 +14,18 @@ export default function AlbumsPage() {
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  const recentAlbums = useMemo(() => {
+    if (!data) return [];
+    const all: AlbumInfo[] = [
+      ...data.albums,
+      ...data.groups.flatMap(g => g.albums),
+    ];
+    return all
+      .filter(a => a.updatedAt)
+      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+      .slice(0, 8);
+  }, [data]);
 
   if (loading) {
     return (
@@ -41,6 +53,18 @@ export default function AlbumsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-5 py-3 sm:p-4 safe-left safe-right">
+      {/* Recent changes */}
+      {recentAlbums.length > 0 && (
+        <div className="mb-8 sm:mb-12">
+          <h2 className="text-base sm:text-lg font-medium text-white mb-3 sm:mb-4">Recent Changes</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {recentAlbums.map(album => (
+              <AlbumCard key={album.path} album={album} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Top-level albums */}
       {data.albums.length > 0 && (
         <div className={data.groups.length > 0 ? 'mb-8 sm:mb-12' : ''}>

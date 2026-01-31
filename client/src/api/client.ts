@@ -40,6 +40,7 @@ export interface AlbumInfo {
   coverImage: string | null;
   imageCount: number;
   hasPassword: boolean;
+  updatedAt?: number;
 }
 
 export interface GroupInfo {
