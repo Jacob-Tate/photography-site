@@ -3,7 +3,7 @@ import path from 'path';
 import sharp from 'sharp';
 import exifReader from 'exif-reader';
 import iptcReader from 'iptc-reader';
-import { IMAGE_EXTENSIONS, PORTFOLIO_DIR, ALBUMS_DIR } from '../config';
+import { IMAGE_EXTENSIONS, PORTFOLIO_DIR, ALBUMS_DIR, config } from '../config';
 import { ImageInfo, AlbumInfo, GroupInfo, AlbumTree, ExifData } from '../types';
 import { renderMarkdown } from '../services/markdown';
 
@@ -15,6 +15,33 @@ interface CachedMetadata {
 }
 
 const metadataCache = new Map<string, CachedMetadata>();
+const CACHE_FILE = path.join(config.photosDir, '.metadata-cache.json');
+
+function loadDiskCache(): void {
+  try {
+    if (!fs.existsSync(CACHE_FILE)) return;
+    const data = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8')) as Record<string, CachedMetadata>;
+    for (const [key, value] of Object.entries(data)) {
+      metadataCache.set(key, value);
+    }
+    console.log(`[metadata] Loaded ${metadataCache.size} entries from disk cache`);
+  } catch {
+    console.log('[metadata] Could not load disk cache, starting fresh');
+  }
+}
+
+function saveDiskCache(): void {
+  try {
+    const obj: Record<string, CachedMetadata> = {};
+    for (const [key, value] of metadataCache) {
+      obj[key] = value;
+    }
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(obj));
+    console.log(`[metadata] Saved ${metadataCache.size} entries to disk cache`);
+  } catch {
+    console.log('[metadata] Could not save disk cache');
+  }
+}
 
 export function isHiddenDir(name: string): boolean {
   return name.startsWith('.') || name === '@eadir' || name === '@EaDir';
@@ -478,6 +505,8 @@ export function getAlbumDir(albumPath: string): string {
 }
 
 export async function preWarmMetadataCache(): Promise<void> {
+  loadDiskCache();
+
   const entries: string[] = [];
 
   // Portfolio images
@@ -542,4 +571,5 @@ export async function preWarmMetadataCache(): Promise<void> {
   }
 
   console.log(`[metadata] Done: ${completed} cached, ${failed} failed`);
+  saveDiskCache();
 }
