@@ -28,7 +28,8 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const holdingEl = useRef<HTMLElement | null>(null);
 
-  const clearLongPress = useCallback(() => {
+  // Defined outside to be stable for add/removeEventListener
+  const onPointerUp = useCallback(() => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
@@ -38,7 +39,19 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       holdingEl.current = null;
     }
     pointerStart.current = null;
+    document.removeEventListener('pointerup', onPointerUp);
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointercancel', onPointerUp);
   }, []);
+
+  const onPointerMove = useCallback((e: PointerEvent) => {
+    if (!pointerStart.current) return;
+    const dx = e.clientX - pointerStart.current.x;
+    const dy = e.clientY - pointerStart.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 10) {
+      onPointerUp(); // Cancel on move
+    }
+  }, [onPointerUp]);
 
   useEffect(() => {
     const markers = L.markerClusterGroup({
@@ -119,18 +132,24 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       }
     });
 
-    map.addLayer(markers);
+    // Handle Long Press (clustermousedown ensures we catch it even if propogation stops)
+    markers.on('clustermousedown', (evt: L.LeafletEvent) => {
+      const e = evt as L.LeafletMouseEvent;
+      const cluster = e.layer;
+      const el = cluster.getElement();
+      if (!el) return;
 
-    // Long-press detection via DOM pointer events on cluster icons
-    const container = map.getContainer();
+      // Ensure it's left click or touch
+      if (e.originalEvent instanceof MouseEvent && e.originalEvent.button !== 0) return;
 
-    const onPointerDown = (e: PointerEvent) => {
-      const target = (e.target as HTMLElement).closest('.marker-cluster') as HTMLElement | null;
-      if (!target) return;
+      const clientX = e.originalEvent instanceof MouseEvent ? e.originalEvent.clientX : (e.originalEvent as any).touches?.[0].clientX;
+      const clientY = e.originalEvent instanceof MouseEvent ? e.originalEvent.clientY : (e.originalEvent as any).touches?.[0].clientY;
+      
+      if (clientX === undefined || clientY === undefined) return;
 
-      pointerStart.current = { x: e.clientX, y: e.clientY };
-      target.classList.add('holding');
-      holdingEl.current = target;
+      pointerStart.current = { x: clientX, y: clientY };
+      el.classList.add('holding');
+      holdingEl.current = el;
 
       longPressTimer.current = setTimeout(() => {
         longPressTriggered.current = true;
@@ -139,42 +158,24 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
           holdingEl.current = null;
         }
       }, 500);
-    };
 
-    const onContextMenu = (e: Event) => {
-      if ((e.target as HTMLElement).closest('.marker-cluster')) {
-        e.preventDefault();
-      }
-    };
+      document.addEventListener('pointermove', onPointerMove);
+      document.addEventListener('pointerup', onPointerUp);
+      document.addEventListener('pointercancel', onPointerUp);
+    });
 
-    const onPointerUp = () => clearLongPress();
-    const onPointerCancel = () => clearLongPress();
+    // Prevent context menu on clusters (prevent default browser long-press menu)
+    markers.on('clustercontextmenu', (evt: L.LeafletEvent) => {
+      (evt as L.LeafletMouseEvent).originalEvent.preventDefault();
+    });
 
-    const onPointerMove = (e: PointerEvent) => {
-      if (!pointerStart.current) return;
-      const dx = e.clientX - pointerStart.current.x;
-      const dy = e.clientY - pointerStart.current.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 10) {
-        clearLongPress();
-      }
-    };
-
-    container.addEventListener('pointerdown', onPointerDown);
-    container.addEventListener('pointerup', onPointerUp);
-    container.addEventListener('pointercancel', onPointerCancel);
-    container.addEventListener('pointermove', onPointerMove);
-    container.addEventListener('contextmenu', onContextMenu);
+    map.addLayer(markers);
 
     return () => {
-      container.removeEventListener('pointerdown', onPointerDown);
-      container.removeEventListener('pointerup', onPointerUp);
-      container.removeEventListener('pointercancel', onPointerCancel);
-      container.removeEventListener('pointermove', onPointerMove);
-      container.removeEventListener('contextmenu', onContextMenu);
-      clearLongPress();
+      onPointerUp(); // Cleanup any active listeners
       map.removeLayer(markers);
     };
-  }, [map, images, onMarkerClick, clearLongPress]);
+  }, [map, images, onMarkerClick, onPointerMove, onPointerUp]);
 
   return null;
 }
