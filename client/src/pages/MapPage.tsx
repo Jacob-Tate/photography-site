@@ -201,6 +201,7 @@ export default function MapPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<MapImage[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [collapsedAlbums, setCollapsedAlbums] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchMapImages()
@@ -217,6 +218,19 @@ export default function MapPage() {
   const handleMarkerClick = (locationImages: MapImage[]) => {
     setSelectedImages(locationImages);
     setLightboxIndex(0);
+    setCollapsedAlbums(new Set());
+  };
+
+  const toggleAlbum = (albumName: string) => {
+    setCollapsedAlbums(prev => {
+      const next = new Set(prev);
+      if (next.has(albumName)) {
+        next.delete(albumName);
+      } else {
+        next.add(albumName);
+      }
+      return next;
+    });
   };
 
   const closeLightbox = () => {
@@ -329,54 +343,79 @@ export default function MapPage() {
                 <div onClick={(e) => e.stopPropagation()}>
                   {albums.map(albumName => {
                     const albumImages = selectedImages.filter(img => img.albumName === albumName);
+                    const isCollapsed = collapsedAlbums.has(albumName!);
                     return (
                       <div key={albumName} className="mb-6">
-                        <h3 className="text-white/70 text-sm font-medium mb-2">{albumName} <span className="text-white/40">({albumImages.length})</span></h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                          {albumImages.map(img => {
-                            const idx = selectedImages.indexOf(img);
-                            return (
-                              <div
-                                key={img.path}
-                                className="aspect-square cursor-pointer overflow-hidden rounded-lg hover:ring-2 hover:ring-white/50 transition-all"
-                                onClick={() => setLightboxIndex(idx + 1)}
-                              >
-                                <img
-                                  src={img.thumbnailUrl}
-                                  alt={img.filename}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <button
+                          onClick={() => toggleAlbum(albumName!)}
+                          className="flex items-center gap-2 text-white/70 text-sm font-medium mb-2 hover:text-white transition-colors"
+                        >
+                          <svg className={`w-4 h-4 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                          {albumName} <span className="text-white/40">({albumImages.length})</span>
+                        </button>
+                        {!isCollapsed && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                            {albumImages.map(img => {
+                              const idx = selectedImages.indexOf(img);
+                              return (
+                                <div
+                                  key={img.path}
+                                  className="aspect-square cursor-pointer overflow-hidden rounded-lg hover:ring-2 hover:ring-white/50 transition-all"
+                                  onClick={() => setLightboxIndex(idx + 1)}
+                                >
+                                  <img
+                                    src={img.thumbnailUrl}
+                                    alt={img.filename}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                   {/* Images without album */}
-                  {selectedImages.some(img => !img.albumName) && (
-                    <div className="mb-6">
-                      <h3 className="text-white/70 text-sm font-medium mb-2">Portfolio <span className="text-white/40">({selectedImages.filter(img => !img.albumName).length})</span></h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                        {selectedImages.filter(img => !img.albumName).map(img => {
-                          const idx = selectedImages.indexOf(img);
-                          return (
-                            <div
-                              key={img.path}
-                              className="aspect-square cursor-pointer overflow-hidden rounded-lg hover:ring-2 hover:ring-white/50 transition-all"
-                              onClick={() => setLightboxIndex(idx + 1)}
-                            >
-                              <img
-                                src={img.thumbnailUrl}
-                                alt={img.filename}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          );
-                        })}
+                  {selectedImages.some(img => !img.albumName) && (() => {
+                    const portfolioImages = selectedImages.filter(img => !img.albumName);
+                    const isCollapsed = collapsedAlbums.has('__portfolio__');
+                    return (
+                      <div className="mb-6">
+                        <button
+                          onClick={() => toggleAlbum('__portfolio__')}
+                          className="flex items-center gap-2 text-white/70 text-sm font-medium mb-2 hover:text-white transition-colors"
+                        >
+                          <svg className={`w-4 h-4 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                          Portfolio <span className="text-white/40">({portfolioImages.length})</span>
+                        </button>
+                        {!isCollapsed && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                            {portfolioImages.map(img => {
+                              const idx = selectedImages.indexOf(img);
+                              return (
+                                <div
+                                  key={img.path}
+                                  className="aspect-square cursor-pointer overflow-hidden rounded-lg hover:ring-2 hover:ring-white/50 transition-all"
+                                  onClick={() => setLightboxIndex(idx + 1)}
+                                >
+                                  <img
+                                    src={img.thumbnailUrl}
+                                    alt={img.filename}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               );
             })()}
