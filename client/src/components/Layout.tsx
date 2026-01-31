@@ -88,7 +88,7 @@ export default function Layout() {
           </div>
         </div>
       </nav>
-      <main className="pt-14 sm:pt-16 safe-bottom">
+      <main className="pt-[calc(3.5rem+var(--safe-area-top))] sm:pt-[calc(4rem+var(--safe-area-top))] safe-bottom">
         <Outlet />
       </main>
     </div>

@@ -88,7 +88,7 @@ export default function GroupPage() {
     const album = data as AlbumDetail;
     return (
       <div className="max-w-7xl mx-auto">
-        <div className="p-3 sm:p-4 pb-0 safe-left safe-right">
+        <div className="px-4 py-3 sm:p-4 pb-0 safe-left safe-right">
           <div className="mb-3 sm:mb-4 flex items-center text-sm flex-wrap gap-y-1">
             <Link to="/albums" className="text-neutral-400 hover:text-white active:text-white transition-colors">
               Albums
@@ -169,7 +169,7 @@ export default function GroupPage() {
   const group = data as GroupDetail;
 
   return (
-    <div className="max-w-7xl mx-auto p-3 sm:p-4 safe-left safe-right">
+    <div className="max-w-7xl mx-auto px-4 py-3 sm:p-4 safe-left safe-right">
       <div className="mb-4 sm:mb-6 flex items-center text-sm flex-wrap gap-y-1">
         <Link to="/albums" className="text-neutral-400 hover:text-white active:text-white transition-colors">
           Albums

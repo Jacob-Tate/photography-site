@@ -42,6 +42,8 @@ export default function Lightbox({
   const [showFullExif, setShowFullExif] = useState(false);
 
   const filmstripRef = useRef<HTMLDivElement>(null);
+  const filmstripDrag = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
+  const hasScrolledRef = useRef(false);
 
   const isLoaded = loadedUrl === image.fullUrl;
   const isZoomed = zoom > 1;
@@ -54,15 +56,47 @@ export default function Lightbox({
     setShowFullExif(false);
   }, [image.fullUrl]);
 
+  // Scroll filmstrip to center a given index
+  const scrollFilmstrip = useCallback((index: number, smooth: boolean) => {
+    const el = filmstripRef.current;
+    if (!el || !images) return;
+
+    const thumbHeight = 56; // h-14
+    const gap = 4; // gap-1
+
+    // The filmstrip has paddingLeft: calc(50vw - 28px) to allow centering the first thumbnail
+    const padLeft = window.innerWidth / 2 - 28;
+
+    // Calculate position from image dimensions (works before thumbnails load)
+    let pos = padLeft;
+    for (let i = 0; i < index; i++) {
+      const img = images[i];
+      pos += (img.width && img.height ? thumbHeight * (img.width / img.height) : thumbHeight) + gap;
+    }
+    const targetImg = images[index];
+    const targetWidth = targetImg.width && targetImg.height ? thumbHeight * (targetImg.width / targetImg.height) : thumbHeight;
+
+    // Center target in viewport
+    const target = Math.max(0, pos + targetWidth / 2 - el.clientWidth / 2);
+    if (smooth) {
+      el.scrollTo({ left: target, behavior: 'smooth' });
+    } else {
+      el.scrollLeft = target;
+    }
+  }, [images]);
+
   // Auto-scroll filmstrip to active thumbnail
   useEffect(() => {
-    if (showFilmstrip && filmstripRef.current) {
-      const active = filmstripRef.current.querySelector('[data-active="true"]');
-      if (active) {
-        active.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
-      }
+    if (!showFilmstrip || currentIndex === undefined) return;
+
+    if (!hasScrolledRef.current) {
+      // First open: use instant scroll after a frame so the filmstrip is in the DOM
+      hasScrolledRef.current = true;
+      requestAnimationFrame(() => scrollFilmstrip(currentIndex, false));
+    } else {
+      scrollFilmstrip(currentIndex, true);
     }
-  }, [currentIndex, showFilmstrip]);
+  }, [currentIndex, showFilmstrip, scrollFilmstrip]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -493,14 +527,30 @@ export default function Lightbox({
         >
           <div
             ref={filmstripRef}
-            className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-hide"
+            className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', paddingLeft: 'calc(50vw - 28px)', paddingRight: 'calc(50vw - 28px)' }}
+            onMouseDown={(e) => {
+              const el = filmstripRef.current;
+              if (!el) return;
+              filmstripDrag.current = { isDown: true, startX: e.pageX - el.offsetLeft, scrollLeft: el.scrollLeft, moved: false };
+            }}
+            onMouseMove={(e) => {
+              const d = filmstripDrag.current;
+              const el = filmstripRef.current;
+              if (!d.isDown || !el) return;
+              const x = e.pageX - el.offsetLeft;
+              const walk = x - d.startX;
+              if (Math.abs(walk) > 5) d.moved = true;
+              el.scrollLeft = d.scrollLeft - walk;
+            }}
+            onMouseUp={() => { filmstripDrag.current.isDown = false; }}
+            onMouseLeave={() => { filmstripDrag.current.isDown = false; }}
           >
             {images!.map((img, idx) => (
               <button
                 key={img.path || idx}
                 data-active={idx === currentIndex}
-                onClick={() => onNavigate!(idx)}
+                onClick={(e) => { if (filmstripDrag.current.moved) { e.preventDefault(); return; } onNavigate!(idx); }}
                 className={`flex-shrink-0 h-14 rounded overflow-hidden transition-all ${
                   idx === currentIndex
                     ? 'ring-2 ring-white opacity-100'
