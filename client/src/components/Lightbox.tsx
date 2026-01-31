@@ -556,6 +556,9 @@ export default function Lightbox({
                     ? 'ring-2 ring-white opacity-100'
                     : 'opacity-50 hover:opacity-80'
                 }`}
+                style={{
+                  aspectRatio: img.width && img.height ? `${img.width}/${img.height}` : '1/1',
+                }}
               >
                 <img
                   src={img.thumbnailUrl}
