@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -23,35 +23,6 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
 }) {
   const map = useMap();
   const markerImageMap = useRef(new WeakMap<L.Marker, MapImage[]>());
-  const longPressTriggered = useRef(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pointerStart = useRef<{ x: number; y: number } | null>(null);
-  const holdingEl = useRef<HTMLElement | null>(null);
-
-  // Defined outside to be stable for add/removeEventListener
-  const onPointerUp = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (holdingEl.current) {
-      holdingEl.current.classList.remove('holding');
-      holdingEl.current = null;
-    }
-    pointerStart.current = null;
-    document.removeEventListener('pointerup', onPointerUp);
-    document.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointercancel', onPointerUp);
-  }, []);
-
-  const onPointerMove = useCallback((e: PointerEvent) => {
-    if (!pointerStart.current) return;
-    const dx = e.clientX - pointerStart.current.x;
-    const dy = e.clientY - pointerStart.current.y;
-    if (Math.sqrt(dx * dx + dy * dy) > 10) {
-      onPointerUp(); // Cancel on move
-    }
-  }, [onPointerUp]);
 
   useEffect(() => {
     const markers = L.markerClusterGroup({
@@ -68,7 +39,7 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
           count += imgs ? imgs.length : 1;
         }
         return L.divIcon({
-          html: `<div class="cluster-icon">${count}</div>`,
+          html: `<div class="cluster-icon" title="Right-click to zoom">${count}</div>`,
           className: 'custom-cluster',
           iconSize: L.point(40, 40),
         });
@@ -113,14 +84,9 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       markers.addLayer(marker);
     });
 
-    // Cluster click → open images, or zoom if long press
+    // Cluster click → open images
     markers.on('clusterclick', (e: L.LeafletEvent) => {
       const cluster = (e as any).layer;
-      if (longPressTriggered.current) {
-        longPressTriggered.current = false;
-        map.fitBounds(cluster.getBounds(), { padding: [50, 50] });
-        return;
-      }
       const childMarkers: L.Marker[] = cluster.getAllChildMarkers();
       const allImages: MapImage[] = [];
       for (const m of childMarkers) {
@@ -132,50 +98,20 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       }
     });
 
-    // Handle Long Press (clustermousedown ensures we catch it even if propogation stops)
-    markers.on('clustermousedown', (evt: L.LeafletEvent) => {
-      const e = evt as L.LeafletMouseEvent;
-      const cluster = e.layer;
-      const el = cluster.getElement();
-      if (!el) return;
-
-      // Ensure it's left click or touch
-      if (e.originalEvent instanceof MouseEvent && e.originalEvent.button !== 0) return;
-
-      const clientX = e.originalEvent instanceof MouseEvent ? e.originalEvent.clientX : (e.originalEvent as any).touches?.[0].clientX;
-      const clientY = e.originalEvent instanceof MouseEvent ? e.originalEvent.clientY : (e.originalEvent as any).touches?.[0].clientY;
-      
-      if (clientX === undefined || clientY === undefined) return;
-
-      pointerStart.current = { x: clientX, y: clientY };
-      el.classList.add('holding');
-      holdingEl.current = el;
-
-      longPressTimer.current = setTimeout(() => {
-        longPressTriggered.current = true;
-        if (holdingEl.current) {
-          holdingEl.current.classList.remove('holding');
-          holdingEl.current = null;
-        }
-      }, 500);
-
-      document.addEventListener('pointermove', onPointerMove);
-      document.addEventListener('pointerup', onPointerUp);
-      document.addEventListener('pointercancel', onPointerUp);
-    });
-
-    // Prevent context menu on clusters (prevent default browser long-press menu)
+    // Cluster Context Menu (Right-Click on PC, Long-Press on Mobile) → Zoom
     markers.on('clustercontextmenu', (evt: L.LeafletEvent) => {
-      (evt as L.LeafletMouseEvent).originalEvent.preventDefault();
+      const e = evt as L.LeafletMouseEvent;
+      e.originalEvent.preventDefault(); // Prevent browser context menu
+      const cluster = (evt as any).layer;
+      map.fitBounds(cluster.getBounds(), { padding: [50, 50] });
     });
 
     map.addLayer(markers);
 
     return () => {
-      onPointerUp(); // Cleanup any active listeners
       map.removeLayer(markers);
     };
-  }, [map, images, onMarkerClick, onPointerMove, onPointerUp]);
+  }, [map, images, onMarkerClick]);
 
   return null;
 }
