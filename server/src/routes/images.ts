@@ -31,6 +31,7 @@ router.get('/thumbnail/*', async (req, res) => {
     }
 
     const thumbPath = await ensureThumbnail(absPath, relativePath);
+    res.set('Cache-Control', 'no-cache');
     res.sendFile(thumbPath);
   } catch (err) {
     console.error('Thumbnail error:', err);
@@ -48,6 +49,7 @@ router.get('/full/*', (req, res) => {
     return;
   }
 
+  res.set('Cache-Control', 'no-cache');
   res.sendFile(absPath);
 });
 
