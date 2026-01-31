@@ -48,7 +48,12 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
       showCoverageOnHover: false,
       maxClusterRadius: 50,
       iconCreateFunction: (cluster) => {
-        const count = cluster.getChildCount();
+        const childMarkers: L.Marker[] = cluster.getAllChildMarkers();
+        let count = 0;
+        for (const m of childMarkers) {
+          const imgs = markerImageMap.current.get(m);
+          count += imgs ? imgs.length : 1;
+        }
         return L.divIcon({
           html: `<div class="cluster-icon">${count}</div>`,
           className: 'custom-cluster',
