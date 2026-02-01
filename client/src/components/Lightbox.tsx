@@ -451,6 +451,14 @@ export default function Lightbox({
                   <span className="text-white/90">{image.exif.megapixels}</span>
                 </div>
               )}
+              {image.width > 0 && image.height > 0 && (
+                <div className="flex justify-between text-white/70">
+                  <span>Max Print Size</span>
+                  <span className="text-white/90">
+                    {(image.width / 300).toFixed(1)} × {(image.height / 300).toFixed(1)} in
+                  </span>
+                </div>
+              )}
               {image.exif.colorSpace && (
                 <div className="flex justify-between text-white/70">
                   <span>Color Space</span>
