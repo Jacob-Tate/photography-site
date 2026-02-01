@@ -48,7 +48,7 @@ app.use('/api/stats', statsRouter);
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '../../client/dist');
-app.use(express.static(clientDist));
+app.use(express.static(clientDist, { index: false }));
 
 // Build Open Graph meta tags for image/album URLs (for Discord, Teams, etc.)
 function buildOgTags(req: express.Request): string {
