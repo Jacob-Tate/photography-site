@@ -127,4 +127,59 @@ router.post('/cover', apiKeyAuth, (req, res) => {
   }
 });
 
+// POST /api/manage/ignorestats
+router.post('/ignorestats', apiKeyAuth, (req, res) => {
+  const { albumPath, ignored } = req.body;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const ignoreFile = path.join(resolvedDir, 'ignorestats.txt');
+
+  try {
+    if (ignored) {
+      fs.mkdirSync(resolvedDir, { recursive: true });
+      fs.writeFileSync(ignoreFile, '', 'utf-8');
+    } else {
+      if (fs.existsSync(ignoreFile)) {
+        fs.unlinkSync(ignoreFile);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Ignore stats update error:', err);
+    res.status(500).json({ error: 'Failed to update ignore stats' });
+  }
+});
+
+// GET /api/manage/ignorestats
+router.get('/ignorestats', apiKeyAuth, (req, res) => {
+  const albumPath = req.query.albumPath as string;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const ignoreFile = path.join(resolvedDir, 'ignorestats.txt');
+  res.json({ ignored: fs.existsSync(ignoreFile) });
+});
+
 export default router;

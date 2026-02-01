@@ -235,6 +235,12 @@ function provider.updateCollectionSettings(publishSettings, info)
       if not ok then
         LrDialogs.message('Password Error', err or 'Could not update album password', 'warning')
       end
+
+      local ignored = settings.ignoreStats or false
+      local ok2, err2 = UploadUtils.setIgnoreStats(serverUrl, apiKey, destination, ignored)
+      if not ok2 then
+        LrDialogs.message('Stats Error', err2 or 'Could not update stats exclusion', 'warning')
+      end
     end
   end)
 end
@@ -268,6 +274,17 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
 
   if not settings.password then
     settings.password = ''
+  end
+
+  if settings.ignoreStats == nil then
+    settings.ignoreStats = false
+    -- Fetch current ignore status from server
+    if publishSettings.serverUrl and publishSettings.apiKey and settings.destination then
+      LrTasks.startAsyncTask(function()
+        local ignored = UploadUtils.getIgnoreStats(publishSettings.serverUrl, publishSettings.apiKey, settings.destination)
+        settings.ignoreStats = ignored
+      end)
+    end
   end
 
   return f:view {
@@ -307,6 +324,17 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
           text_color = import 'LrColor'(0.6, 0.6, 0.6),
         },
       }
+    },
+
+    f:row {
+      f:static_text {
+        title = '',
+        alignment = 'right',
+      },
+      f:checkbox {
+        value = bind 'ignoreStats',
+        title = 'Exclude from Stats',
+      },
     }
   }
 end

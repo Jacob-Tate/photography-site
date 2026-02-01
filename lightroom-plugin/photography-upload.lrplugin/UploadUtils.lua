@@ -24,8 +24,14 @@ local function json_encode(t)
   for k, v in pairs(t) do
       if not first then table.insert(parts, ",") end
       first = false
-      local val = tostring(v):gsub('\\', '\\\\'):gsub('"', '\\"')
-      table.insert(parts, '"' .. k .. '":"' .. val .. '"')
+      if type(v) == "boolean" then
+        table.insert(parts, '"' .. k .. '":' .. tostring(v))
+      elseif type(v) == "number" then
+        table.insert(parts, '"' .. k .. '":' .. tostring(v))
+      else
+        local val = tostring(v):gsub('\\', '\\\\'):gsub('"', '\\"')
+        table.insert(parts, '"' .. k .. '":"' .. val .. '"')
+      end
   end
   table.insert(parts, "}")
   return table.concat(parts)
@@ -210,6 +216,42 @@ function UploadUtils.setCoverImage(serverUrl, apiKey, albumPath, filename)
   if hdrs and hdrs.status and hdrs.status >= 400 then return false, 'Failed to set cover image' end
 
   return true
+end
+
+function UploadUtils.setIgnoreStats(serverUrl, apiKey, albumPath, ignored)
+  local url = serverUrl .. '/api/manage/ignorestats'
+  local body = json_encode({ albumPath = albumPath, ignored = ignored })
+  local headers = {
+    { field = 'Content-Type', value = 'application/json' },
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.post(url, body, headers)
+
+  if not result then return false, 'Network error' end
+  if hdrs and hdrs.status and hdrs.status >= 400 then return false, 'Failed to update ignore stats' end
+
+  return true
+end
+
+function UploadUtils.getIgnoreStats(serverUrl, apiKey, albumPath)
+  local url = serverUrl .. '/api/manage/ignorestats?albumPath=' .. urlencode(albumPath)
+  local headers = {
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.get(url, headers)
+
+  if not result or (hdrs and hdrs.status and hdrs.status >= 400) then
+    return false
+  end
+
+  local success, data = pcall(json_decode, result)
+  if not success or not data then
+    return false
+  end
+
+  return data.ignored == true
 end
 
 return UploadUtils
