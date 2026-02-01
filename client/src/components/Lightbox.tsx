@@ -4,6 +4,38 @@ import DownloadButton from './DownloadButton';
 import ShareButton from './ShareButton';
 import Histogram from './Histogram';
 
+const geocodeCache = new Map<string, string>();
+
+function useReverseGeocode(lat: number | undefined, lon: number | undefined): string | null {
+  const [name, setName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (lat === undefined || lon === undefined) { setName(null); return; }
+    const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+    if (geocodeCache.has(key)) { setName(geocodeCache.get(key)!); return; }
+
+    let cancelled = false;
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        const addr = data.address;
+        if (!addr) return;
+        const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || '';
+        const country = addr.country || '';
+        const label = [city, country].filter(Boolean).join(', ');
+        if (label) {
+          geocodeCache.set(key, label);
+          setName(label);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [lat, lon]);
+
+  return name;
+}
+
 interface LightboxProps {
   image: ImageInfo;
   onClose: () => void;
@@ -27,6 +59,7 @@ export default function Lightbox({
   currentIndex,
   onNavigate,
 }: LightboxProps) {
+  const locationName = useReverseGeocode(image.exif?.gps?.latitude, image.exif?.gps?.longitude);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -490,11 +523,15 @@ export default function Lightbox({
                     href={`https://www.google.com/maps?q=${image.exif.gps.latitude},${image.exif.gps.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 underline"
+                    className="text-blue-400 hover:text-blue-300 underline text-right"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {image.exif.gps.latitude.toFixed(4)}, {image.exif.gps.longitude.toFixed(4)}
-                    {image.exif.gps.altitude !== undefined && ` (${image.exif.gps.altitude}m)`}
+                    {locationName ? (
+                      <>{locationName}<br /><span className="text-white/40 text-xs no-underline">{image.exif.gps.latitude.toFixed(4)}, {image.exif.gps.longitude.toFixed(4)}</span></>
+                    ) : (
+                      <>{image.exif.gps.latitude.toFixed(4)}, {image.exif.gps.longitude.toFixed(4)}</>
+                    )}
+                    {image.exif.gps.altitude !== undefined && <span className="text-white/40 text-xs"> ({image.exif.gps.altitude}m)</span>}
                   </a>
                 </div>
               )}
