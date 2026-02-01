@@ -17,10 +17,14 @@ import tagsRouter from './routes/tags';
 import statsRouter from './routes/stats';
 import { preGenerateThumbnails } from './services/thumbnailQueue';
 import { preWarmMetadataCache } from './services/scanner';
+import { initAnalytics } from './services/analytics';
+import { ipTracker } from './middleware/ipTracker';
 
 const app = express();
 
+app.set('trust proxy', true);
 app.use(express.json());
+app.use(ipTracker);
 
 app.use(session({
   secret: config.sessionSecret,
@@ -135,6 +139,7 @@ app.get('*', (req, res) => {
 app.listen(config.port, () => {
   console.log(`Server running on http://localhost:${config.port}`);
   console.log(`Photos directory: ${config.photosDir}`);
+  initAnalytics();
   preGenerateThumbnails();
   preWarmMetadataCache();
 

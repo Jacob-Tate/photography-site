@@ -4,6 +4,8 @@ import path from 'path';
 import { scanPortfolio, scanAlbums, scanAlbumImages, listImageFiles } from '../services/scanner';
 import { PORTFOLIO_DIR, ALBUMS_DIR } from '../config';
 import { ImageInfo } from '../types';
+import { isStatsIgnored, isPortfolioStatsIgnored } from '../services/ignoreStats';
+import { getAnalyticsSummary } from '../services/analytics';
 
 const router = Router();
 
@@ -86,15 +88,17 @@ router.get('/', async (_req, res) => {
     };
 
     // Portfolio
-    const portfolioImages = await scanPortfolio();
-    processImages(portfolioImages);
+    if (!isPortfolioStatsIgnored()) {
+      const portfolioImages = await scanPortfolio();
+      processImages(portfolioImages);
 
-    // Disk usage for portfolio
-    const portfolioFiles = listImageFiles(PORTFOLIO_DIR);
-    for (const f of portfolioFiles) {
-      try {
-        diskUsageBytes += fs.statSync(path.join(PORTFOLIO_DIR, f)).size;
-      } catch { /* skip */ }
+      // Disk usage for portfolio
+      const portfolioFiles = listImageFiles(PORTFOLIO_DIR);
+      for (const f of portfolioFiles) {
+        try {
+          diskUsageBytes += fs.statSync(path.join(PORTFOLIO_DIR, f)).size;
+        } catch { /* skip */ }
+      }
     }
 
     // Albums
@@ -103,6 +107,10 @@ router.get('/', async (_req, res) => {
     let totalAlbums = albumTree.albums.length;
 
     for (const album of albumTree.albums) {
+      if (isStatsIgnored(album.path)) {
+        totalAlbums--;
+        continue;
+      }
       const images = await scanAlbumImages(album.path);
       processImages(images);
 
@@ -116,8 +124,9 @@ router.get('/', async (_req, res) => {
     }
 
     for (const group of albumTree.groups) {
-      totalAlbums += group.albums.length;
       for (const album of group.albums) {
+        if (isStatsIgnored(album.path)) continue;
+        totalAlbums++;
         const images = await scanAlbumImages(album.path);
         processImages(images);
 
@@ -150,6 +159,7 @@ router.get('/', async (_req, res) => {
       byHour,
       geotaggedCount,
       keywordedCount,
+      ...getAnalyticsSummary(),
     });
   } catch (err) {
     console.error('Stats error:', err);

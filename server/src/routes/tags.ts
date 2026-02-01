@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { scanPortfolio, scanAlbums, scanAlbumImages } from '../services/scanner';
+import { isStatsIgnored, isPortfolioStatsIgnored } from '../services/ignoreStats';
 
 const router = Router();
 
@@ -9,11 +10,13 @@ router.get('/', async (_req, res) => {
     const tagCounts = new Map<string, number>();
 
     // Get portfolio images
-    const portfolioImages = await scanPortfolio();
-    for (const img of portfolioImages) {
-      if (img.exif?.keywords) {
-        for (const kw of img.exif.keywords) {
-          tagCounts.set(kw, (tagCounts.get(kw) || 0) + 1);
+    if (!isPortfolioStatsIgnored()) {
+      const portfolioImages = await scanPortfolio();
+      for (const img of portfolioImages) {
+        if (img.exif?.keywords) {
+          for (const kw of img.exif.keywords) {
+            tagCounts.set(kw, (tagCounts.get(kw) || 0) + 1);
+          }
         }
       }
     }
@@ -23,6 +26,7 @@ router.get('/', async (_req, res) => {
 
     // Process top-level albums
     for (const album of albumTree.albums) {
+      if (isStatsIgnored(album.path)) continue;
       const images = await scanAlbumImages(album.path);
       for (const img of images) {
         if (img.exif?.keywords) {
@@ -36,6 +40,7 @@ router.get('/', async (_req, res) => {
     // Process group albums
     for (const group of albumTree.groups) {
       for (const album of group.albums) {
+        if (isStatsIgnored(album.path)) continue;
         const images = await scanAlbumImages(album.path);
         for (const img of images) {
           if (img.exif?.keywords) {

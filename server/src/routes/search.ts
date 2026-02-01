@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { scanPortfolio, scanAlbums, scanAlbumImages } from '../services/scanner';
 import { ImageInfo } from '../types';
+import { isStatsIgnored, isPortfolioStatsIgnored } from '../services/ignoreStats';
 
 const router = Router();
 
@@ -22,10 +23,12 @@ router.get('/', async (req, res) => {
     const results: SearchResult[] = [];
 
     // Search portfolio images
-    const portfolioImages = await scanPortfolio();
-    for (const img of portfolioImages) {
-      if (img.exif?.keywords?.some(k => k.toLowerCase().includes(query))) {
-        results.push({ ...img, albumName: 'Portfolio', albumPath: 'portfolio' });
+    if (!isPortfolioStatsIgnored()) {
+      const portfolioImages = await scanPortfolio();
+      for (const img of portfolioImages) {
+        if (img.exif?.keywords?.some(k => k.toLowerCase().includes(query))) {
+          results.push({ ...img, albumName: 'Portfolio', albumPath: 'portfolio' });
+        }
       }
     }
 
@@ -34,6 +37,7 @@ router.get('/', async (req, res) => {
 
     // Process top-level albums
     for (const album of albumTree.albums) {
+      if (isStatsIgnored(album.path)) continue;
       const images = await scanAlbumImages(album.path);
       for (const img of images) {
         if (img.exif?.keywords?.some(k => k.toLowerCase().includes(query))) {
@@ -45,6 +49,7 @@ router.get('/', async (req, res) => {
     // Process group albums
     for (const group of albumTree.groups) {
       for (const album of group.albums) {
+        if (isStatsIgnored(album.path)) continue;
         const images = await scanAlbumImages(album.path);
         for (const img of images) {
           if (img.exif?.keywords?.some(k => k.toLowerCase().includes(query))) {

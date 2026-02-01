@@ -157,6 +157,10 @@ export interface StatsData {
   byHour: number[];
   geotaggedCount: number;
   keywordedCount: number;
+  totalViews: number;
+  uniqueVisitors: number;
+  topAlbums: { name: string; count: number }[];
+  topPhotos: { name: string; count: number }[];
 }
 
 export async function fetchStats(): Promise<StatsData> {

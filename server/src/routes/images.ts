@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config';
 import { ensureThumbnail } from '../services/thumbnail';
+import { recordPhotoView } from '../services/analytics';
 
 const router = Router();
 
@@ -61,6 +62,8 @@ router.get('/full/*', (req, res) => {
     res.status(404).json({ error: 'Image not found' });
     return;
   }
+
+  recordPhotoView(relativePath);
 
   const ext = path.extname(absPath).toLowerCase();
   if (MIME_TYPES[ext]) {
