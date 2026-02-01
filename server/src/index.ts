@@ -18,13 +18,10 @@ import statsRouter from './routes/stats';
 import { preGenerateThumbnails } from './services/thumbnailQueue';
 import { preWarmMetadataCache } from './services/scanner';
 import { initAnalytics } from './services/analytics';
-import { ipTracker } from './middleware/ipTracker';
-
 const app = express();
 
 app.set('trust proxy', true);
 app.use(express.json());
-app.use(ipTracker);
 
 app.use(session({
   secret: config.sessionSecret,

@@ -5,7 +5,7 @@ import { renderMarkdown } from '../services/markdown';
 import { scanAlbums, scanAlbumImages, getAlbumReadme, getAlbumDir, isHiddenDir } from '../services/scanner';
 import { getAlbumPassword, isAlbumUnlocked } from '../services/password';
 import { ALBUMS_DIR, IMAGE_EXTENSIONS } from '../config';
-import { recordAlbumView } from '../services/analytics';
+import { recordAlbumView, recordIP } from '../services/analytics';
 
 const router = Router();
 
@@ -72,6 +72,7 @@ router.get('/*', async (req, res) => {
       const readme = getAlbumReadme(albumPath);
 
       recordAlbumView(albumPath);
+      if (req.ip) recordIP(req.ip);
 
       res.json({
         type: 'album',

@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config';
 import { ensureThumbnail } from '../services/thumbnail';
-import { recordPhotoView } from '../services/analytics';
+import { recordPhotoView, recordIP } from '../services/analytics';
 
 const router = Router();
 
@@ -64,6 +64,7 @@ router.get('/full/*', (req, res) => {
   }
 
   recordPhotoView(relativePath);
+  if (req.ip) recordIP(req.ip);
 
   const ext = path.extname(absPath).toLowerCase();
   if (MIME_TYPES[ext]) {
