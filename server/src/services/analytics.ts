@@ -97,6 +97,7 @@ export function getAnalyticsSummary() {
   return {
     totalViews: totalAlbumViews + totalPhotoViews,
     uniqueVisitors: uniqueIPs.size,
+    uniqueIPList: Array.from(uniqueIPs),
     topAlbums,
     topPhotos,
   };

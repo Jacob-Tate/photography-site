@@ -139,6 +139,7 @@ export default function StatsPage() {
   const [filterLabel, setFilterLabel] = useState('');
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [collapsedAlbums, setCollapsedAlbums] = useState<Set<string>>(new Set());
+  const [showIPs, setShowIPs] = useState(false);
 
   useEffect(() => {
     fetchStats()
@@ -208,6 +209,8 @@ export default function StatsPage() {
           setLightboxIndex(0);
         } else if (filterImages !== null || filterLoading) {
           closeOverlay();
+        } else if (showIPs) {
+          setShowIPs(false);
         }
       }
     };
@@ -217,11 +220,11 @@ export default function StatsPage() {
 
   // Body scroll lock
   useEffect(() => {
-    if (filterImages !== null || filterLoading) {
+    if (filterImages !== null || filterLoading || showIPs) {
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = ''; };
     }
-  }, [filterImages, filterLoading]);
+  }, [filterImages, filterLoading, showIPs]);
 
   const overlayOpen = filterImages !== null || filterLoading;
 
@@ -270,7 +273,10 @@ export default function StatsPage() {
             <div className="text-3xl font-bold text-white">{stats.totalViews.toLocaleString()}</div>
             <div className="text-white/50 text-sm mt-1">Total Views</div>
           </div>
-          <div className="bg-white/5 rounded-xl p-5 text-center">
+          <div
+            className="bg-white/5 rounded-xl p-5 text-center cursor-pointer hover:bg-white/10 transition-colors"
+            onClick={() => setShowIPs(true)}
+          >
             <div className="text-3xl font-bold text-white">{stats.uniqueVisitors.toLocaleString()}</div>
             <div className="text-white/50 text-sm mt-1">Unique Visitors</div>
           </div>
@@ -303,6 +309,38 @@ export default function StatsPage() {
           <YearChart data={stats.byYear} onBarClick={(year) => handleStatClick('year', year)} />
         </div>
       </div>
+
+      {/* IP addresses overlay */}
+      {showIPs && stats.uniqueIPList.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black/90 overflow-auto"
+          style={{ zIndex: 1000 }}
+          onClick={() => setShowIPs(false)}
+        >
+          <div className="p-4 pt-16 max-w-xl mx-auto" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowIPs(false)}
+              className="fixed top-4 right-4 p-2 text-white/70 hover:text-white"
+              style={{ zIndex: 1001 }}
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h2 className="text-white text-lg mb-4 text-center">
+              Unique Visitors
+              <span className="text-white/50 ml-2">— {stats.uniqueIPList.length} IP{stats.uniqueIPList.length !== 1 ? 's' : ''}</span>
+            </h2>
+            <div className="bg-white/5 rounded-xl p-4 space-y-1">
+              {stats.uniqueIPList.map((ip) => (
+                <div key={ip} className="text-white/70 text-sm font-mono py-1 px-2 rounded hover:bg-white/5">
+                  {ip}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filter overlay */}
       {overlayOpen && (
@@ -451,7 +489,7 @@ export default function StatsPage() {
 
       {/* Lightbox */}
       {filterImages && filterImages.length > 0 && lightboxIndex > 0 && (
-        <div style={{ zIndex: 1002 }}>
+        <div className="fixed inset-0" style={{ zIndex: 1002 }}>
           <Lightbox
             image={filterImages[lightboxIndex - 1]}
             onClose={() => setLightboxIndex(0)}

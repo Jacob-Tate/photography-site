@@ -69,7 +69,7 @@ router.get('/full/*', (req, res) => {
   if (MIME_TYPES[ext]) {
     res.set('Content-Type', MIME_TYPES[ext]);
   }
-  res.set('Cache-Control', 'public, max-age=86400');
+  res.set('Cache-Control', 'no-cache');
   res.sendFile(absPath);
 });
 

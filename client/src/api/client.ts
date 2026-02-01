@@ -159,6 +159,7 @@ export interface StatsData {
   keywordedCount: number;
   totalViews: number;
   uniqueVisitors: number;
+  uniqueIPList: string[];
   topAlbums: { name: string; count: number }[];
   topPhotos: { name: string; count: number }[];
 }
