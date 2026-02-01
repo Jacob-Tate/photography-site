@@ -154,6 +154,7 @@ export interface StatsData {
   lenses: { name: string; count: number }[];
   focalLengths: { name: string; count: number }[];
   apertures: { name: string; count: number }[];
+  shutterSpeeds: { name: string; count: number }[];
   isos: { name: string; count: number }[];
   byYear: { year: string; count: number }[];
   byHour: number[];

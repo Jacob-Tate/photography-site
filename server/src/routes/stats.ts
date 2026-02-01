@@ -48,7 +48,7 @@ router.get('/filter', async (req, res) => {
     const field = req.query.field as string;
     const value = req.query.value as string;
 
-    const validFields = ['camera', 'lens', 'focalLength', 'aperture', 'iso', 'year', 'hour'];
+    const validFields = ['camera', 'lens', 'focalLength', 'aperture', 'shutterSpeed', 'iso', 'year', 'hour'];
     if (!field || !value || !validFields.includes(field)) {
       res.status(400).json({ error: 'Invalid field or value' });
       return;
@@ -69,6 +69,7 @@ router.get('/filter', async (req, res) => {
         case 'lens': return exif.lens === value;
         case 'focalLength': return exif.focalLength === value;
         case 'aperture': return exif.aperture === value;
+        case 'shutterSpeed': return exif.shutterSpeed === value;
         case 'iso': return String(exif.iso) === value;
         case 'year': return parseYear(exif.dateTaken) === value;
         case 'hour': return String(parseHour(exif.dateTaken)) === value;
@@ -123,6 +124,7 @@ router.get('/', async (_req, res) => {
     const lenses = new Map<string, number>();
     const focalLengths = new Map<string, number>();
     const apertures = new Map<string, number>();
+    const shutterSpeeds = new Map<string, number>();
     const isos = new Map<string, number>();
     const years = new Map<string, number>();
     const byHour: number[] = new Array(24).fill(0);
@@ -142,6 +144,7 @@ router.get('/', async (_req, res) => {
         addToMap(lenses, exif.lens);
         addToMap(focalLengths, exif.focalLength);
         addToMap(apertures, exif.aperture);
+        addToMap(shutterSpeeds, exif.shutterSpeed);
         if (exif.iso !== undefined) {
           addToMap(isos, String(exif.iso));
         }
@@ -228,6 +231,7 @@ router.get('/', async (_req, res) => {
       lenses: mapToSorted(lenses),
       focalLengths: mapToSorted(focalLengths),
       apertures: mapToSorted(apertures),
+      shutterSpeeds: mapToSorted(shutterSpeeds),
       isos: mapToSorted(isos),
       byYear,
       byHour,

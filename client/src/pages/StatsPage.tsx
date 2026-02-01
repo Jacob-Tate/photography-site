@@ -160,6 +160,7 @@ export default function StatsPage() {
       case 'lens': label = `Lens: ${value}`; break;
       case 'focalLength': label = `Focal Length: ${value}`; break;
       case 'aperture': label = `Aperture: ${value}`; break;
+      case 'shutterSpeed': label = `Shutter Speed: ${value}`; break;
       case 'iso': label = `ISO: ${value}`; break;
       case 'year': label = `Year: ${value}`; break;
       case 'hour': label = `Hour: ${formatHourLabel(Number(value))}`; break;
@@ -298,8 +299,9 @@ export default function StatsPage() {
         </div>
 
         {/* Exposure Settings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <RankedList title="Top Apertures" items={stats.apertures} onItemClick={(name) => handleStatClick('aperture', name)} />
+          <RankedList title="Top Shutter Speeds" items={stats.shutterSpeeds} onItemClick={(name) => handleStatClick('shutterSpeed', name)} />
           <RankedList title="Top ISOs" items={stats.isos} onItemClick={(name) => handleStatClick('iso', name)} />
         </div>
 
