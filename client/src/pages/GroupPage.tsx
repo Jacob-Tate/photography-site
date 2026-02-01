@@ -180,7 +180,7 @@ export default function GroupPage() {
 
       <h1 className="text-xl sm:text-2xl font-medium text-white mb-4 sm:mb-6">{group.name}</h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4">
         {group.albums.map(album => (
           <AlbumCard key={album.path} album={album} basePath={`/albums/${groupSlug}`} />
         ))}

@@ -401,12 +401,22 @@ function getAlbumUpdatedAt(albumDir: string, images: string[]): number {
   return maxMtime;
 }
 
-function buildAlbumInfo(albumDir: string, albumPath: string): AlbumInfo {
+async function buildAlbumInfo(albumDir: string, albumPath: string): Promise<AlbumInfo> {
   const name = path.basename(albumDir);
   const images = listImageFiles(albumDir);
   const hasPassword = fs.existsSync(path.join(albumDir, 'password.txt'));
   const cover = images.length > 0 ? getCoverImage(albumDir, images) : undefined;
   const updatedAt = getAlbumUpdatedAt(albumDir, images);
+
+  let coverWidth: number | undefined;
+  let coverHeight: number | undefined;
+  if (cover && !hasPassword) {
+    try {
+      const meta = await getImageMetadata(path.join(albumDir, cover));
+      coverWidth = meta.width;
+      coverHeight = meta.height;
+    } catch { /* skip */ }
+  }
 
   return {
     name: formatAlbumName(name),
@@ -415,13 +425,15 @@ function buildAlbumInfo(albumDir: string, albumPath: string): AlbumInfo {
     coverImage: cover && !hasPassword
       ? `/api/images/thumbnail/${albumPath}/${cover}`
       : null,
+    coverWidth,
+    coverHeight,
     imageCount: images.length,
     hasPassword,
     updatedAt: updatedAt || undefined,
   };
 }
 
-export function scanAlbums(): AlbumTree {
+export async function scanAlbums(): Promise<AlbumTree> {
   if (!fs.existsSync(ALBUMS_DIR)) {
     return { groups: [], albums: [] };
   }
@@ -440,7 +452,7 @@ export function scanAlbums(): AlbumTree {
 
     if (hasDirectImages(entryDir)) {
       // It's a top-level album
-      topAlbums.push(buildAlbumInfo(entryDir, albumPath));
+      topAlbums.push(await buildAlbumInfo(entryDir, albumPath));
     } else if (hasSubdirectories(entryDir)) {
       // It's a group
       const subEntries = fs.readdirSync(entryDir).filter(f => {
@@ -448,12 +460,14 @@ export function scanAlbums(): AlbumTree {
         return fs.statSync(full).isDirectory() && !isHiddenDir(f);
       }).sort(albumSort);
 
-      const groupAlbums = subEntries
-        .filter(sub => hasDirectImages(path.join(entryDir, sub)))
-        .map(sub => buildAlbumInfo(
-          path.join(entryDir, sub),
-          `albums/${entry}/${sub}`
-        ));
+      const groupAlbums = await Promise.all(
+        subEntries
+          .filter(sub => hasDirectImages(path.join(entryDir, sub)))
+          .map(sub => buildAlbumInfo(
+            path.join(entryDir, sub),
+            `albums/${entry}/${sub}`
+          ))
+      );
 
       if (groupAlbums.length > 0) {
         groups.push({

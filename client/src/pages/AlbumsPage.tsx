@@ -57,7 +57,7 @@ export default function AlbumsPage() {
       {recentAlbums.length > 0 && (
         <div className="mb-8 sm:mb-12">
           <h2 className="text-base sm:text-lg font-medium text-white mb-3 sm:mb-4">Recent Changes</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4">
             {recentAlbums.map(album => (
               <AlbumCard key={album.path} album={album} />
             ))}
@@ -71,7 +71,7 @@ export default function AlbumsPage() {
           {data.groups.length > 0 && (
             <h2 className="text-base sm:text-lg font-medium text-white mb-3 sm:mb-4">Albums</h2>
           )}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4">
             {data.albums.map(album => (
               <AlbumCard key={album.path} album={album} />
             ))}
@@ -88,7 +88,7 @@ export default function AlbumsPage() {
           >
             {group.name}
           </Link>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4">
             {group.albums.slice(0, 4).map(album => (
               <AlbumCard key={album.path} album={album} />
             ))}

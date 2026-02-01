@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
     }
 
     // Search all album images
-    const albumTree = scanAlbums();
+    const albumTree = await scanAlbums();
 
     // Process top-level albums
     for (const album of albumTree.albums) {

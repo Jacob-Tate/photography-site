@@ -22,7 +22,7 @@ router.get('/', async (_req, res) => {
     }
 
     // Get all album images
-    const albumTree = scanAlbums();
+    const albumTree = await scanAlbums();
 
     // Process top-level albums
     for (const album of albumTree.albums) {

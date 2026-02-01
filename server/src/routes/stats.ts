@@ -87,7 +87,7 @@ router.get('/filter', async (req, res) => {
     }
 
     // Albums
-    const albumTree = scanAlbums();
+    const albumTree = await scanAlbums();
     for (const album of albumTree.albums) {
       if (isStatsIgnored(album.path)) continue;
       const images = await scanAlbumImages(album.path);
@@ -176,7 +176,7 @@ router.get('/', async (_req, res) => {
     }
 
     // Albums
-    const albumTree = scanAlbums();
+    const albumTree = await scanAlbums();
     const totalGroups = albumTree.groups.length;
     let totalAlbums = albumTree.albums.length;
 

@@ -10,9 +10,9 @@ import { recordAlbumView, recordIP } from '../services/analytics';
 const router = Router();
 
 // GET /api/albums - album tree
-router.get('/', (_req, res) => {
+router.get('/', async (_req, res) => {
   try {
-    const tree = scanAlbums();
+    const tree = await scanAlbums();
     res.json(tree);
   } catch (err) {
     console.error('Error scanning albums:', err);

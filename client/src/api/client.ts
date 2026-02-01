@@ -38,6 +38,8 @@ export interface AlbumInfo {
   slug: string;
   path: string;
   coverImage: string | null;
+  coverWidth?: number;
+  coverHeight?: number;
   imageCount: number;
   hasPassword: boolean;
   updatedAt?: number;
