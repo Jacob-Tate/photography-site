@@ -43,6 +43,80 @@ function parseHour(dateTaken: string | undefined): number | null {
   return hour;
 }
 
+router.get('/filter', async (req, res) => {
+  try {
+    const field = req.query.field as string;
+    const value = req.query.value as string;
+
+    const validFields = ['camera', 'lens', 'focalLength', 'aperture', 'iso', 'year', 'hour'];
+    if (!field || !value || !validFields.includes(field)) {
+      res.status(400).json({ error: 'Invalid field or value' });
+      return;
+    }
+
+    interface FilterResult extends ImageInfo {
+      albumName?: string;
+      albumPath?: string;
+    }
+
+    const results: FilterResult[] = [];
+
+    const matchImage = (img: ImageInfo): boolean => {
+      const exif = img.exif;
+      if (!exif) return false;
+      switch (field) {
+        case 'camera': return exif.camera === value;
+        case 'lens': return exif.lens === value;
+        case 'focalLength': return exif.focalLength === value;
+        case 'aperture': return exif.aperture === value;
+        case 'iso': return String(exif.iso) === value;
+        case 'year': return parseYear(exif.dateTaken) === value;
+        case 'hour': return String(parseHour(exif.dateTaken)) === value;
+        default: return false;
+      }
+    };
+
+    // Portfolio
+    if (!isPortfolioStatsIgnored()) {
+      const portfolioImages = await scanPortfolio();
+      for (const img of portfolioImages) {
+        if (matchImage(img)) {
+          results.push(img);
+        }
+      }
+    }
+
+    // Albums
+    const albumTree = scanAlbums();
+    for (const album of albumTree.albums) {
+      if (isStatsIgnored(album.path)) continue;
+      const images = await scanAlbumImages(album.path);
+      for (const img of images) {
+        if (matchImage(img)) {
+          results.push({ ...img, albumName: album.name, albumPath: album.path });
+        }
+      }
+    }
+
+    for (const group of albumTree.groups) {
+      for (const album of group.albums) {
+        if (isStatsIgnored(album.path)) continue;
+        const images = await scanAlbumImages(album.path);
+        for (const img of images) {
+          if (matchImage(img)) {
+            results.push({ ...img, albumName: album.name, albumPath: album.path });
+          }
+        }
+      }
+    }
+
+    res.json({ results, field, value });
+  } catch (err) {
+    console.error('Stats filter error:', err);
+    res.status(500).json({ error: 'Failed to filter stats' });
+  }
+});
+
 router.get('/', async (_req, res) => {
   try {
     const cameras = new Map<string, number>();

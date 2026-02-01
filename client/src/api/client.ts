@@ -168,3 +168,14 @@ export async function fetchStats(): Promise<StatsData> {
   if (!res.ok) throw new Error('Failed to fetch stats');
   return res.json();
 }
+
+export interface StatsFilterResult extends ImageInfo {
+  albumName?: string;
+  albumPath?: string;
+}
+
+export async function fetchStatsFilter(field: string, value: string): Promise<{ results: StatsFilterResult[]; field: string; value: string }> {
+  const res = await fetch(`/api/stats/filter?field=${encodeURIComponent(field)}&value=${encodeURIComponent(value)}`);
+  if (!res.ok) throw new Error('Failed to filter stats');
+  return res.json();
+}
