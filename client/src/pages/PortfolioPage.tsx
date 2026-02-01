@@ -47,7 +47,7 @@ export default function PortfolioPage() {
 
   return (
     <>
-      <PhotoGrid images={images} onPhotoClick={lightbox.open} />
+      <PhotoGrid images={images} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
       {lightbox.isOpen && lightbox.currentImage && (
         <Lightbox
           image={lightbox.currentImage}

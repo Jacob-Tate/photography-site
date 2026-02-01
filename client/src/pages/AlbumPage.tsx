@@ -176,7 +176,7 @@ export default function AlbumPage() {
         />
       ) : (
         <>
-          <PhotoGrid images={sortedImages} onPhotoClick={lightbox.open} />
+          <PhotoGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
           {lightbox.isOpen && lightbox.currentImage && (
             <Lightbox
               image={lightbox.currentImage}
