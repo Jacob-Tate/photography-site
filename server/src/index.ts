@@ -62,13 +62,13 @@ function buildOgTags(req: express.Request): string {
       imagePath = `${urlPath.replace(/^\//, '')}/${imageParam}`;
     }
     const thumbUrl = `${host}/api/images/thumbnail/${imagePath}`;
-    const fullUrl = `${host}/api/images/full/${imagePath}`;
-    const title = imageParam;
+    const title = imageParam.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
     return [
       `<meta property="og:title" content="${title}" />`,
       `<meta property="og:type" content="website" />`,
-      `<meta property="og:image" content="${fullUrl}" />`,
+      `<meta property="og:image" content="${thumbUrl}" />`,
       `<meta property="og:image:alt" content="${title}" />`,
+      `<meta property="og:image:width" content="600" />`,
       `<meta property="og:url" content="${host}${req.originalUrl}" />`,
       `<meta name="twitter:card" content="summary_large_image" />`,
       `<meta name="twitter:image" content="${thumbUrl}" />`,
@@ -86,22 +86,29 @@ function buildOgTags(req: express.Request): string {
         if (fs.existsSync(coverFile)) {
           cover = fs.readFileSync(coverFile, 'utf-8').trim();
         }
+        const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.tiff', '.tif'];
+        const imageFiles = fs.readdirSync(albumDir).filter(f => IMAGE_EXTS.includes(path.extname(f).toLowerCase())).sort();
         if (!cover) {
-          const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.tiff', '.tif'];
-          const files = fs.readdirSync(albumDir).filter(f => IMAGE_EXTS.includes(path.extname(f).toLowerCase())).sort();
-          cover = files[0];
+          cover = imageFiles[0];
         }
         if (cover) {
+          const imageCount = imageFiles.length;
           const albumPath = `albums/${albumSlug}`;
           const thumbUrl = `${host}/api/images/thumbnail/${albumPath}/${cover}`;
           const name = albumSlug.split('/').pop()!.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          const description = `${imageCount} photo${imageCount !== 1 ? 's' : ''}`;
           return [
             `<meta property="og:title" content="${name}" />`,
             `<meta property="og:type" content="website" />`,
+            `<meta property="og:description" content="${description}" />`,
             `<meta property="og:image" content="${thumbUrl}" />`,
+            `<meta property="og:image:width" content="600" />`,
             `<meta property="og:url" content="${host}${urlPath}" />`,
             `<meta name="twitter:card" content="summary_large_image" />`,
+            `<meta name="twitter:title" content="${name}" />`,
+            `<meta name="twitter:description" content="${description}" />`,
             `<meta name="twitter:image" content="${thumbUrl}" />`,
+            `<meta name="description" content="${name} — ${description}" />`,
           ].join('\n    ');
         }
       }

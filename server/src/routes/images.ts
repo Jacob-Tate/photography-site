@@ -6,6 +6,15 @@ import { ensureThumbnail } from '../services/thumbnail';
 
 const router = Router();
 
+const MIME_TYPES: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.tiff': 'image/tiff',
+  '.tif': 'image/tiff',
+};
+
 function validatePath(reqPath: string): string | null {
   const resolved = path.resolve(config.photosDir, reqPath);
   if (!resolved.startsWith(config.photosDir)) {
@@ -31,7 +40,11 @@ router.get('/thumbnail/*', async (req, res) => {
     }
 
     const thumbPath = await ensureThumbnail(absPath, relativePath);
-    res.set('Cache-Control', 'no-cache');
+    const ext = path.extname(relativePath).toLowerCase();
+    if (MIME_TYPES[ext]) {
+      res.set('Content-Type', MIME_TYPES[ext]);
+    }
+    res.set('Cache-Control', 'public, max-age=86400');
     res.sendFile(thumbPath);
   } catch (err) {
     console.error('Thumbnail error:', err);
@@ -49,7 +62,11 @@ router.get('/full/*', (req, res) => {
     return;
   }
 
-  res.set('Cache-Control', 'no-cache');
+  const ext = path.extname(absPath).toLowerCase();
+  if (MIME_TYPES[ext]) {
+    res.set('Content-Type', MIME_TYPES[ext]);
+  }
+  res.set('Cache-Control', 'public, max-age=86400');
   res.sendFile(absPath);
 });
 
