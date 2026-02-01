@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -116,11 +117,16 @@ function MarkerClusterGroup({ images, onMarkerClick }: {
   return null;
 }
 
-// Fit map to bounds of all markers
-function FitBounds({ images }: { images: MapImage[] }) {
+// Fit map to bounds of all markers, or fly to specific coords
+function FitBounds({ images, focusLat, focusLon }: { images: MapImage[]; focusLat?: number; focusLon?: number }) {
   const map = useMap();
 
   useEffect(() => {
+    if (focusLat !== undefined && focusLon !== undefined) {
+      map.setView([focusLat, focusLon], 14);
+      return;
+    }
+
     if (images.length === 0) return;
 
     const bounds = L.latLngBounds(
@@ -132,12 +138,16 @@ function FitBounds({ images }: { images: MapImage[] }) {
     if (bounds.isValid()) {
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
     }
-  }, [map, images]);
+  }, [map, images, focusLat, focusLon]);
 
   return null;
 }
 
 export default function MapPage() {
+  const [searchParams] = useSearchParams();
+  const focusLat = searchParams.get('lat') ? Number(searchParams.get('lat')) : undefined;
+  const focusLon = searchParams.get('lon') ? Number(searchParams.get('lon')) : undefined;
+
   const [images, setImages] = useState<MapImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -225,7 +235,7 @@ export default function MapPage() {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
           <MarkerClusterGroup images={images} onMarkerClick={handleMarkerClick} />
-          <FitBounds images={images} />
+          <FitBounds images={images} focusLat={focusLat} focusLon={focusLon} />
         </MapContainer>
       </div>
 

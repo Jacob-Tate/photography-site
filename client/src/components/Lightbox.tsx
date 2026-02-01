@@ -517,22 +517,31 @@ export default function Lightbox({
                 </div>
               )}
               {image.exif.gps && (
-                <div className="flex justify-between text-white/70 items-center">
-                  <span>Location</span>
-                  <a
-                    href={`https://www.google.com/maps?q=${image.exif.gps.latitude},${image.exif.gps.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 underline text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {locationName ? (
-                      <>{locationName}<br /><span className="text-white/40 text-xs no-underline">{image.exif.gps.latitude.toFixed(4)}, {image.exif.gps.longitude.toFixed(4)}</span></>
-                    ) : (
-                      <>{image.exif.gps.latitude.toFixed(4)}, {image.exif.gps.longitude.toFixed(4)}</>
+                <div className="flex justify-between text-white/70 items-start gap-4">
+                  <span className="pt-0.5 shrink-0">Location</span>
+                  <div className="text-right">
+                    <a
+                      href={`/map?lat=${image.exif.gps.latitude}&lon=${image.exif.gps.longitude}`}
+                      className="text-blue-400 hover:text-blue-300 underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {locationName || <>{image.exif.gps.latitude.toFixed(4)}, {image.exif.gps.longitude.toFixed(4)}</>}
+                    </a>
+                    {' '}
+                    <a
+                      href={`https://www.google.com/maps?q=${image.exif.gps.latitude},${image.exif.gps.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400/50 hover:text-blue-300 text-xs underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Google Maps ↗
+                    </a>
+                    {locationName && (
+                      <div className="text-white/40 text-xs">{image.exif.gps.latitude.toFixed(4)}, {image.exif.gps.longitude.toFixed(4)}</div>
                     )}
-                    {image.exif.gps.altitude !== undefined && <span className="text-white/40 text-xs"> ({image.exif.gps.altitude}m)</span>}
-                  </a>
+                    {image.exif.gps.altitude !== undefined && <div className="text-white/40 text-xs">{image.exif.gps.altitude}m altitude</div>}
+                  </div>
                 </div>
               )}
               {image.exif.keywords && image.exif.keywords.length > 0 && (
