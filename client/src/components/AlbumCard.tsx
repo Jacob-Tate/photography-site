@@ -10,14 +10,10 @@ interface AlbumCardProps {
 export default function AlbumCard({ album, basePath = '' }: AlbumCardProps) {
   const [loaded, setLoaded] = useState(false);
   const to = basePath ? `${basePath}/${album.slug}` : `/albums/${album.path.replace('albums/', '')}`;
-  const aspectRatio = album.coverWidth && album.coverHeight
-    ? album.coverHeight / album.coverWidth
-    : 3 / 4;
-
   return (
     <Link to={to} className="block group break-inside-avoid mb-3 sm:mb-4">
       <div className="relative overflow-hidden rounded-sm bg-neutral-800">
-        <div style={{ paddingBottom: `${aspectRatio * 100}%` }} className="relative">
+        <div className="relative" style={{ paddingBottom: '100%' }}>
           {album.coverImage ? (
             <img
               src={album.coverImage}
