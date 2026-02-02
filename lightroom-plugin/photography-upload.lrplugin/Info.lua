@@ -12,19 +12,12 @@ return {
 
   LrLibraryMenuItems = {
     {
-      title = 'Edit Album Readme',
-      file = 'EditReadme.lua',
-    },
-    {
-      title = 'Edit Photo Caption',
-      file = 'EditCaption.lua',
-    },
-  },
-
-  LrContextMenuItems = {
-    {
       title = 'Set as Cover Image',
       file = 'SetCoverImage.lua',
+    },
+    {
+      title = 'Edit Album Readme',
+      file = 'EditReadme.lua',
     },
     {
       title = 'Edit Photo Caption',
