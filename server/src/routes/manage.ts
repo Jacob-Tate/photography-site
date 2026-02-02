@@ -182,4 +182,138 @@ router.get('/ignorestats', apiKeyAuth, (req, res) => {
   res.json({ ignored: fs.existsSync(ignoreFile) });
 });
 
+// GET /api/manage/readme
+router.get('/readme', apiKeyAuth, (req, res) => {
+  const albumPath = req.query.albumPath as string;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const readmeFile = path.join(resolvedDir, 'README.md');
+
+  try {
+    if (fs.existsSync(readmeFile)) {
+      const content = fs.readFileSync(readmeFile, 'utf-8');
+      res.json({ content });
+    } else {
+      res.json({ content: '' });
+    }
+  } catch (err) {
+    console.error('Read readme error:', err);
+    res.status(500).json({ error: 'Failed to read README' });
+  }
+});
+
+// POST /api/manage/readme
+router.post('/readme', apiKeyAuth, (req, res) => {
+  const { albumPath, content } = req.body;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const readmeFile = path.join(resolvedDir, 'README.md');
+
+  try {
+    if (content && content.trim() !== '') {
+      fs.mkdirSync(resolvedDir, { recursive: true });
+      fs.writeFileSync(readmeFile, content, 'utf-8');
+    } else {
+      if (fs.existsSync(readmeFile)) {
+        fs.unlinkSync(readmeFile);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Write readme error:', err);
+    res.status(500).json({ error: 'Failed to write README' });
+  }
+});
+
+// GET /api/manage/caption
+router.get('/caption', apiKeyAuth, (req, res) => {
+  const imagePath = req.query.imagePath as string;
+
+  if (!imagePath) {
+    res.status(400).json({ error: 'imagePath is required' });
+    return;
+  }
+
+  const resolvedPath = path.resolve(config.photosDir, imagePath);
+
+  if (!resolvedPath.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const parsed = path.parse(resolvedPath);
+  const captionFile = path.join(parsed.dir, parsed.name + '.md');
+
+  try {
+    if (fs.existsSync(captionFile)) {
+      const content = fs.readFileSync(captionFile, 'utf-8');
+      res.json({ content });
+    } else {
+      res.json({ content: '' });
+    }
+  } catch (err) {
+    console.error('Read caption error:', err);
+    res.status(500).json({ error: 'Failed to read caption' });
+  }
+});
+
+// POST /api/manage/caption
+router.post('/caption', apiKeyAuth, (req, res) => {
+  const { imagePath, content } = req.body;
+
+  if (!imagePath) {
+    res.status(400).json({ error: 'imagePath is required' });
+    return;
+  }
+
+  const resolvedPath = path.resolve(config.photosDir, imagePath);
+
+  if (!resolvedPath.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const parsed = path.parse(resolvedPath);
+  const captionFile = path.join(parsed.dir, parsed.name + '.md');
+
+  try {
+    if (content && content.trim() !== '') {
+      fs.mkdirSync(parsed.dir, { recursive: true });
+      fs.writeFileSync(captionFile, content, 'utf-8');
+    } else {
+      if (fs.existsSync(captionFile)) {
+        fs.unlinkSync(captionFile);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Write caption error:', err);
+    res.status(500).json({ error: 'Failed to write caption' });
+  }
+});
+
 export default router;

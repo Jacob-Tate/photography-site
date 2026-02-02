@@ -29,7 +29,7 @@ local function json_encode(t)
       elseif type(v) == "number" then
         table.insert(parts, '"' .. k .. '":' .. tostring(v))
       else
-        local val = tostring(v):gsub('\\', '\\\\'):gsub('"', '\\"')
+        local val = tostring(v):gsub('\\', '\\\\'):gsub('"', '\\"'):gsub('\n', '\\n'):gsub('\r', '\\r')
         table.insert(parts, '"' .. k .. '":"' .. val .. '"')
       end
   end
@@ -47,20 +47,29 @@ local function json_decode(str)
   end
 
   local function decode_string()
-    pos = pos + 1 
-    local start = pos
+    pos = pos + 1
+    local parts = {}
     while pos <= len do
       local c = str:sub(pos, pos)
       if c == '"' then
-        local val = str:sub(start, pos - 1)
         pos = pos + 1
-        return val
+        return table.concat(parts)
       elseif c == '\\' then
+        local next_c = str:sub(pos + 1, pos + 1)
+        if next_c == 'n' then table.insert(parts, '\n')
+        elseif next_c == 'r' then table.insert(parts, '\r')
+        elseif next_c == 't' then table.insert(parts, '\t')
+        elseif next_c == '"' then table.insert(parts, '"')
+        elseif next_c == '\\' then table.insert(parts, '\\')
+        elseif next_c == '/' then table.insert(parts, '/')
+        else table.insert(parts, next_c) end
         pos = pos + 2
       else
+        table.insert(parts, c)
         pos = pos + 1
       end
     end
+    return table.concat(parts)
   end
 
   local function decode_number()
@@ -252,6 +261,78 @@ function UploadUtils.getIgnoreStats(serverUrl, apiKey, albumPath)
   end
 
   return data.ignored == true
+end
+
+function UploadUtils.getReadme(serverUrl, apiKey, albumPath)
+  local url = serverUrl .. '/api/manage/readme?albumPath=' .. urlencode(albumPath)
+  local headers = {
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.get(url, headers)
+
+  if not result or (hdrs and hdrs.status and hdrs.status >= 400) then
+    return '', 'Failed to fetch README'
+  end
+
+  local success, data = pcall(json_decode, result)
+  if not success or not data then
+    return '', 'Invalid JSON response'
+  end
+
+  return data.content or ''
+end
+
+function UploadUtils.setReadme(serverUrl, apiKey, albumPath, content)
+  local url = serverUrl .. '/api/manage/readme'
+  local body = json_encode({ albumPath = albumPath, content = content or '' })
+  local headers = {
+    { field = 'Content-Type', value = 'application/json' },
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.post(url, body, headers)
+
+  if not result then return false, 'Network error' end
+  if hdrs and hdrs.status and hdrs.status >= 400 then return false, 'Failed to save README' end
+
+  return true
+end
+
+function UploadUtils.getCaption(serverUrl, apiKey, imagePath)
+  local url = serverUrl .. '/api/manage/caption?imagePath=' .. urlencode(imagePath)
+  local headers = {
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.get(url, headers)
+
+  if not result or (hdrs and hdrs.status and hdrs.status >= 400) then
+    return '', 'Failed to fetch caption'
+  end
+
+  local success, data = pcall(json_decode, result)
+  if not success or not data then
+    return '', 'Invalid JSON response'
+  end
+
+  return data.content or ''
+end
+
+function UploadUtils.setCaption(serverUrl, apiKey, imagePath, content)
+  local url = serverUrl .. '/api/manage/caption'
+  local body = json_encode({ imagePath = imagePath, content = content or '' })
+  local headers = {
+    { field = 'Content-Type', value = 'application/json' },
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.post(url, body, headers)
+
+  if not result then return false, 'Network error' end
+  if hdrs and hdrs.status and hdrs.status >= 400 then return false, 'Failed to save caption' end
+
+  return true
 end
 
 return UploadUtils
