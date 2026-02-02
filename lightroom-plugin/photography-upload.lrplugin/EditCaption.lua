@@ -90,6 +90,7 @@ LrTasks.startAsyncTask(function()
     local result = LrDialogs.presentModalDialog({
       title = 'Edit Photo Caption — ' .. filename,
       contents = f:column {
+        bind_to_object = props,
         spacing = f:control_spacing(),
         f:static_text {
           title = 'Markdown caption for: ' .. remoteId,
@@ -98,7 +99,7 @@ LrTasks.startAsyncTask(function()
           value = LrView.bind('captionContent'),
           height_in_lines = 15,
           width_in_chars = 80,
-          object = props,
+          allow_newlines = true,
         },
       },
     })

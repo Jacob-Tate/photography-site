@@ -67,6 +67,7 @@ LrTasks.startAsyncTask(function()
     local result = LrDialogs.presentModalDialog({
       title = 'Edit Album Readme — ' .. (collection:getName() or ''),
       contents = f:column {
+        bind_to_object = props,
         spacing = f:control_spacing(),
         f:static_text {
           title = 'Markdown content for album: ' .. albumPath,
@@ -75,7 +76,7 @@ LrTasks.startAsyncTask(function()
           value = LrView.bind('readmeContent'),
           height_in_lines = 20,
           width_in_chars = 80,
-          object = props,
+          allow_newlines = true,
         },
       },
     })

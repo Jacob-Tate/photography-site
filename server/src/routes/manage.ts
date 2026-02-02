@@ -182,6 +182,17 @@ router.get('/ignorestats', apiKeyAuth, (req, res) => {
   res.json({ ignored: fs.existsSync(ignoreFile) });
 });
 
+// Find existing readme file with any common casing, or default to README.md
+const README_CANDIDATES = ['README.md', 'readme.md', 'Readme.md'];
+
+function findReadmeFile(dir: string): string {
+  for (const name of README_CANDIDATES) {
+    const filePath = path.join(dir, name);
+    if (fs.existsSync(filePath)) return filePath;
+  }
+  return path.join(dir, 'README.md');
+}
+
 // GET /api/manage/readme
 router.get('/readme', apiKeyAuth, (req, res) => {
   const albumPath = req.query.albumPath as string;
@@ -198,7 +209,7 @@ router.get('/readme', apiKeyAuth, (req, res) => {
     return;
   }
 
-  const readmeFile = path.join(resolvedDir, 'README.md');
+  const readmeFile = findReadmeFile(resolvedDir);
 
   try {
     if (fs.existsSync(readmeFile)) {
@@ -229,7 +240,7 @@ router.post('/readme', apiKeyAuth, (req, res) => {
     return;
   }
 
-  const readmeFile = path.join(resolvedDir, 'README.md');
+  const readmeFile = findReadmeFile(resolvedDir);
 
   try {
     if (content && content.trim() !== '') {
