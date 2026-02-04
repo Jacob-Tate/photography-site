@@ -68,7 +68,7 @@ export default function PhotoGrid({ images, onPhotoClick, lightboxOpen }: PhotoG
   }, [lightboxOpen]);
 
   return (
-    <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4 p-3 sm:p-4 safe-left safe-right">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 safe-left safe-right">
       {images.map((image, index) => (
         <PhotoCard
           key={image.path}
