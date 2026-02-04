@@ -44,7 +44,7 @@ function saveDiskCache(): void {
 }
 
 export function isHiddenDir(name: string): boolean {
-  return name.startsWith('.') || name === '@eadir' || name === '@EaDir';
+  return name.startsWith('.') || name === '@eadir' || name === '@eaDir';
 }
 
 function isImageFile(filename: string): boolean {
