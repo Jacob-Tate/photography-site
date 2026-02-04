@@ -120,16 +120,20 @@ export default function Lightbox({
 
   // Auto-scroll filmstrip to active thumbnail
   useEffect(() => {
-    if (!showFilmstrip || currentIndex === undefined) return;
+    if (!showFilmstrip || !showControls || isZoomed || currentIndex === undefined) {
+      // Filmstrip not visible — reset so next mount re-centers
+      hasScrolledRef.current = false;
+      return;
+    }
 
     if (!hasScrolledRef.current) {
-      // First open: use instant scroll after a frame so the filmstrip is in the DOM
+      // Filmstrip just (re)mounted: instant scroll after a frame so the DOM is ready
       hasScrolledRef.current = true;
       requestAnimationFrame(() => scrollFilmstrip(currentIndex, false));
     } else {
       scrollFilmstrip(currentIndex, true);
     }
-  }, [currentIndex, showFilmstrip, scrollFilmstrip]);
+  }, [currentIndex, showFilmstrip, showControls, isZoomed, scrollFilmstrip]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -416,7 +420,7 @@ export default function Lightbox({
       {/* Caption panel */}
       {isLoaded && showControls && !isZoomed && image.caption && (
         <div
-          className={`absolute left-4 z-20 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-white/90 max-w-[340px] max-h-[200px] overflow-y-auto prose prose-invert prose-sm ${showFilmstrip ? 'bottom-[88px]' : 'bottom-4 safe-bottom'}`}
+          className={`absolute left-4 right-4 sm:right-auto z-20 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-white/90 sm:max-w-[340px] max-h-[25vh] sm:max-h-[200px] overflow-y-auto prose prose-invert prose-sm top-[calc(var(--safe-area-top)+5rem)] sm:top-auto bottom-auto ${showFilmstrip ? 'sm:bottom-[88px]' : 'sm:bottom-4 safe-bottom'}`}
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
