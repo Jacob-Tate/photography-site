@@ -1,15 +1,14 @@
-import { useState, useRef, useEffect, forwardRef, CSSProperties } from 'react';
+import { useState, useRef, useEffect, forwardRef } from 'react';
 import { ImageInfo } from '../api/client';
 
 interface PhotoCardProps {
   image: ImageInfo;
   onClick: () => void;
   focused?: boolean;
-  gridStyle?: CSSProperties;
-  center?: boolean;
+  rowSpan?: number;
 }
 
-const PhotoCard = forwardRef<HTMLDivElement, PhotoCardProps>(function PhotoCard({ image, onClick, focused, gridStyle, center }, forwardedRef) {
+const PhotoCard = forwardRef<HTMLDivElement, PhotoCardProps>(function PhotoCard({ image, onClick, focused, rowSpan }, forwardedRef) {
   const [loaded, setLoaded] = useState(false);
   const [visible, setVisible] = useState(false);
   const internalRef = useRef<HTMLDivElement>(null);
@@ -36,15 +35,15 @@ const PhotoCard = forwardRef<HTMLDivElement, PhotoCardProps>(function PhotoCard(
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`cursor-pointer group relative overflow-hidden rounded-sm${center ? ' flex items-center' : ''}${focused ? ' ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
-      style={gridStyle}
+      className={`cursor-pointer group relative overflow-hidden rounded-sm${focused ? ' ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+      style={rowSpan ? { gridRowEnd: `span ${rowSpan}` } : undefined}
       onClick={onClick}
     >
       {visible && (
         <img
           src={image.thumbnailUrl}
           alt={image.filename}
-          className={`w-full ${center ? '' : 'h-full'} object-cover transition-all duration-300 ${
+          className={`w-full h-full object-cover transition-all duration-300 ${
             loaded ? 'opacity-100' : 'opacity-0'
           } group-hover:scale-105`}
           onLoad={() => setLoaded(true)}
