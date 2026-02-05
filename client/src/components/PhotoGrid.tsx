@@ -1,6 +1,8 @@
-import { useEffect, useState, useCallback, useRef, createRef } from 'react';
+import { useEffect, useLayoutEffect, useState, useCallback, useRef, createRef } from 'react';
 import { ImageInfo } from '../api/client';
 import PhotoCard from './PhotoCard';
+
+const BASE_ROW = 4; // Small base unit (px) for fine-grained aspect-ratio row spans
 
 interface PhotoGridProps {
   images: ImageInfo[];
@@ -11,11 +13,38 @@ interface PhotoGridProps {
 export default function PhotoGrid({ images, onPhotoClick, lightboxOpen }: PhotoGridProps) {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const cardRefs = useRef<React.RefObject<HTMLDivElement>[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [layout, setLayout] = useState<{ colWidth: number; gap: number }>({ colWidth: 0, gap: 0 });
 
   // Keep refs array in sync with images
   if (cardRefs.current.length !== images.length) {
     cardRefs.current = images.map((_, i) => cardRefs.current[i] || createRef<HTMLDivElement>());
   }
+
+  // Measure column width and gap from the live grid so row spans match actual layout
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const style = getComputedStyle(el);
+      const cols = style.gridTemplateColumns.split(' ').length;
+      const gap = parseFloat(style.columnGap) || parseFloat(style.gap) || 0;
+      const w = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      setLayout({ colWidth: (w - gap * (cols - 1)) / cols, gap });
+    };
+
+    measure(); // Compute before first paint
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const getRowSpan = useCallback((image: ImageInfo) => {
+    if (layout.colWidth <= 0 || !image.width || !image.height) return undefined;
+    const displayHeight = layout.colWidth * (image.height / image.width);
+    return Math.max(1, Math.round((displayHeight + layout.gap) / (BASE_ROW + layout.gap)));
+  }, [layout]);
 
   const scrollToIndex = useCallback((index: number) => {
     const el = cardRefs.current[index]?.current;
@@ -68,7 +97,11 @@ export default function PhotoGrid({ images, onPhotoClick, lightboxOpen }: PhotoG
   }, [lightboxOpen]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 safe-left safe-right">
+    <div
+      ref={containerRef}
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 grid-flow-row-dense gap-3 sm:gap-4 p-3 sm:p-4 safe-left safe-right"
+      style={{ gridAutoRows: `${BASE_ROW}px` }}
+    >
       {images.map((image, index) => (
         <PhotoCard
           key={image.path}
@@ -76,6 +109,7 @@ export default function PhotoGrid({ images, onPhotoClick, lightboxOpen }: PhotoG
           image={image}
           onClick={() => onPhotoClick(index)}
           focused={focusedIndex === index}
+          rowSpan={getRowSpan(image)}
         />
       ))}
     </div>
