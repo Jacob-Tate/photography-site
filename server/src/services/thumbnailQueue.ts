@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { PORTFOLIO_DIR, ALBUMS_DIR, IMAGE_EXTENSIONS, THUMBNAILS_DIR } from '../config';
+import { PORTFOLIO_DIR, ALBUMS_DIR, MEDIA_EXTENSIONS, THUMBNAILS_DIR } from '../config';
 import { listImageFiles, isHiddenDir } from './scanner';
 import { ensureThumbnail } from './thumbnail';
+import { ensureVideoThumbnail, isVideoFile } from './videoThumbnail';
 
 interface ImageEntry {
   absolutePath: string;
@@ -26,12 +27,12 @@ function collectAllImages(): ImageEntry[] {
       if (!fs.existsSync(dir)) return;
       const items = fs.readdirSync(dir);
 
-      // Add image files in this directory
+      // Add media files in this directory
       for (const item of items) {
         if (isHiddenDir(item)) continue;
         const full = path.join(dir, item);
         const stat = fs.statSync(full);
-        if (stat.isFile() && IMAGE_EXTENSIONS.includes(path.extname(item).toLowerCase())) {
+        if (stat.isFile() && MEDIA_EXTENSIONS.includes(path.extname(item).toLowerCase())) {
           entries.push({
             absolutePath: full,
             relativePath: `${relativeBase}/${item}`,
@@ -75,7 +76,11 @@ export async function preGenerateThumbnails(): Promise<void> {
 
   const processEntry = async (entry: ImageEntry) => {
     try {
-      await ensureThumbnail(entry.absolutePath, entry.relativePath);
+      if (isVideoFile(entry.absolutePath)) {
+        await ensureVideoThumbnail(entry.absolutePath, entry.relativePath);
+      } else {
+        await ensureThumbnail(entry.absolutePath, entry.relativePath);
+      }
       completed++;
     } catch (err) {
       failed++;

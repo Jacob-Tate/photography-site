@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect, forwardRef } from 'react';
 import { ImageInfo } from '../api/client';
 
+function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 interface PhotoCardProps {
   image: ImageInfo;
   onClick: () => void;
@@ -51,6 +57,16 @@ const PhotoCard = forwardRef<HTMLDivElement, PhotoCardProps>(function PhotoCard(
       )}
       {!loaded && (
         <div className="absolute inset-0 bg-neutral-800 animate-pulse" />
+      )}
+      {image.type === 'video' && (
+        <div className="absolute bottom-2 left-2 bg-black/70 rounded px-1.5 py-0.5 flex items-center gap-1">
+          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          {image.duration !== undefined && (
+            <span className="text-white text-xs">{formatDuration(image.duration)}</span>
+          )}
+        </div>
       )}
     </div>
   );

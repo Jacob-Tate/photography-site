@@ -23,3 +23,6 @@ export const THUMBNAILS_DIR = path.join(config.photosDir, '.thumbnails');
 export const SOCIAL_EXPORTS_DIR = path.join(config.photosDir, '.social-exports');
 
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.tiff', '.tif'];
+export const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.webm', '.m4v', '.mkv'];
+export const MEDIA_EXTENSIONS = [...IMAGE_EXTENSIONS, ...VIDEO_EXTENSIONS];
+export const videoThumbnailOffset = 1; // extract frame at 1 second to avoid black frames

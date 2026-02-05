@@ -18,8 +18,8 @@ RUN npm run build
 FROM node:20-alpine AS production
 WORKDIR /app
 
-# Install sharp dependencies for Alpine
-RUN apk add --no-cache vips-dev
+# Install sharp dependencies and FFmpeg for video thumbnails
+RUN apk add --no-cache vips-dev ffmpeg
 
 # Copy server production dependencies
 COPY server/package*.json ./server/

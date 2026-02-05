@@ -31,6 +31,9 @@ export interface ImageInfo {
   downloadUrl: string;
   exif?: ExifData;
   caption?: string;
+  type?: 'image' | 'video';  // defaults to 'image' for backward compat
+  duration?: number;         // video duration in seconds
+  videoUrl?: string;         // streaming URL for videos
 }
 
 export interface AlbumInfo {

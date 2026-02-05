@@ -14,6 +14,7 @@ A self-hosted photography portfolio and gallery application with album managemen
 - Stats dashboard with gear usage, shooting times, and storage overview
 - Shareable links for albums and individual images
 - Download individual images or full albums as ZIP
+- Video support (MP4, MOV, WebM) with thumbnail generation and lightbox playback
 - Automatic thumbnail generation
 - Lightroom plugin for uploading directly from Adobe Lightroom (LAN only)
 - Progressive Web App (installable on mobile)
@@ -71,7 +72,7 @@ cd client && npm run dev     # runs on :5173 with proxy to :3000
 
 ```
 photos/
-  portfolio/          # Images shown on the main portfolio page
+  portfolio/          # Images and videos shown on the main portfolio page
   albums/
     album-name/       # A standalone album
       image.jpg
@@ -98,6 +99,16 @@ photos/
 ## Lightbox Filmstrip
 
 When viewing a photo in the lightbox, a horizontal thumbnail filmstrip appears at the bottom of the screen showing all images in the current album or collection. The active image is highlighted and auto-centered. Click any thumbnail to jump directly to that image. The filmstrip hides automatically when zoomed in or when controls are hidden (tap on mobile).
+
+## Video Support
+
+Short video clips (behind-the-scenes, reels, timelapses) are supported alongside photos:
+
+- Supported formats: `.mp4`, `.mov`, `.webm`, `.m4v`, `.mkv`
+- Thumbnails are auto-generated from the video (frame at 1 second)
+- Videos display with a play icon and duration in the grid
+- Click to open in lightbox with native video controls
+- Videos can be uploaded via Lightroom plugin alongside photos
 
 ## Sharing
 
@@ -129,7 +140,7 @@ Click the share button on any album or in the lightbox to copy a shareable link 
 A Lightroom Classic plugin is included in `lightroom-plugin/` for uploading images directly from Lightroom to the server over the local network.
 
 Features:
-- Publish photos to any album on the server
+- Publish photos and videos to any album on the server
 - Sync album structure from the server with "Sync Albums Now"
 - Set or remove album passwords from the album settings dialog
 - Set an album cover image via Library > Plugin Extras > Set as Cover Image

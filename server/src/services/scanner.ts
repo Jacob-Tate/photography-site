@@ -3,9 +3,10 @@ import path from 'path';
 import sharp from 'sharp';
 import exifReader from 'exif-reader';
 import iptcReader from 'iptc-reader';
-import { IMAGE_EXTENSIONS, PORTFOLIO_DIR, ALBUMS_DIR, config } from '../config';
+import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, MEDIA_EXTENSIONS, PORTFOLIO_DIR, ALBUMS_DIR, config } from '../config';
 import { ImageInfo, AlbumInfo, GroupInfo, AlbumTree, ExifData } from '../types';
 import { renderMarkdown } from '../services/markdown';
+import { getVideoMetadata, isVideoFile } from './videoThumbnail';
 
 interface CachedMetadata {
   mtimeMs: number;
@@ -49,6 +50,10 @@ export function isHiddenDir(name: string): boolean {
 
 function isImageFile(filename: string): boolean {
   return IMAGE_EXTENSIONS.includes(path.extname(filename).toLowerCase());
+}
+
+function isMediaFile(filename: string): boolean {
+  return MEDIA_EXTENSIONS.includes(path.extname(filename).toLowerCase());
 }
 
 function formatAlbumName(dirname: string): string {
@@ -317,7 +322,7 @@ async function getImageMetadata(filePath: string): Promise<{ width: number; heig
 export function listImageFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
-    .filter(f => isImageFile(f) && !isHiddenDir(f))
+    .filter(f => isMediaFile(f) && !isHiddenDir(f))
     .sort();
 }
 
@@ -336,19 +341,40 @@ export async function scanPortfolio(): Promise<ImageInfo[]> {
 
   for (const filename of files) {
     const filePath = path.join(PORTFOLIO_DIR, filename);
-    const { width, height, exif } = await getImageMetadata(filePath);
     const caption = await getImageCaption(filePath);
-    images.push({
-      filename,
-      path: `portfolio/${filename}`,
-      width,
-      height,
-      thumbnailUrl: `/api/images/thumbnail/portfolio/${filename}`,
-      fullUrl: `/api/images/full/portfolio/${filename}`,
-      downloadUrl: `/api/images/download/portfolio/${filename}`,
-      exif,
-      caption,
-    });
+    const imgPath = `portfolio/${filename}`;
+
+    if (isVideoFile(filename)) {
+      // Handle video files
+      const { width, height, duration } = await getVideoMetadata(filePath);
+      images.push({
+        filename,
+        path: imgPath,
+        width,
+        height,
+        thumbnailUrl: `/api/images/thumbnail/${imgPath}`,
+        fullUrl: `/api/images/full/${imgPath}`,
+        downloadUrl: `/api/images/download/${imgPath}`,
+        caption,
+        type: 'video',
+        duration,
+        videoUrl: `/api/images/video/${imgPath}`,
+      });
+    } else {
+      // Handle image files
+      const { width, height, exif } = await getImageMetadata(filePath);
+      images.push({
+        filename,
+        path: imgPath,
+        width,
+        height,
+        thumbnailUrl: `/api/images/thumbnail/${imgPath}`,
+        fullUrl: `/api/images/full/${imgPath}`,
+        downloadUrl: `/api/images/download/${imgPath}`,
+        exif,
+        caption,
+      });
+    }
   }
 
   return images;
@@ -356,7 +382,7 @@ export async function scanPortfolio(): Promise<ImageInfo[]> {
 
 function hasDirectImages(dir: string): boolean {
   if (!fs.existsSync(dir)) return false;
-  return fs.readdirSync(dir).some(f => isImageFile(f));
+  return fs.readdirSync(dir).some(f => isMediaFile(f));
 }
 
 function hasSubdirectories(dir: string): boolean {
@@ -492,20 +518,40 @@ export async function scanAlbumImages(albumPath: string): Promise<ImageInfo[]> {
 
   for (const filename of files) {
     const filePath = path.join(fullDir, filename);
-    const { width, height, exif } = await getImageMetadata(filePath);
     const caption = await getImageCaption(filePath);
     const imgPath = `${albumPath}/${filename}`;
-    images.push({
-      filename,
-      path: imgPath,
-      width,
-      height,
-      thumbnailUrl: `/api/images/thumbnail/${imgPath}`,
-      fullUrl: `/api/images/full/${imgPath}`,
-      downloadUrl: `/api/images/download/${imgPath}`,
-      exif,
-      caption,
-    });
+
+    if (isVideoFile(filename)) {
+      // Handle video files
+      const { width, height, duration } = await getVideoMetadata(filePath);
+      images.push({
+        filename,
+        path: imgPath,
+        width,
+        height,
+        thumbnailUrl: `/api/images/thumbnail/${imgPath}`,
+        fullUrl: `/api/images/full/${imgPath}`,
+        downloadUrl: `/api/images/download/${imgPath}`,
+        caption,
+        type: 'video',
+        duration,
+        videoUrl: `/api/images/video/${imgPath}`,
+      });
+    } else {
+      // Handle image files
+      const { width, height, exif } = await getImageMetadata(filePath);
+      images.push({
+        filename,
+        path: imgPath,
+        width,
+        height,
+        thumbnailUrl: `/api/images/thumbnail/${imgPath}`,
+        fullUrl: `/api/images/full/${imgPath}`,
+        downloadUrl: `/api/images/download/${imgPath}`,
+        exif,
+        caption,
+      });
+    }
   }
 
   return images;
@@ -536,12 +582,14 @@ export async function preWarmMetadataCache(): Promise<void> {
 
   const entries: string[] = [];
 
-  // Portfolio images
+  // Portfolio images (excludes videos - they don't use sharp metadata)
   for (const file of listImageFiles(PORTFOLIO_DIR)) {
-    entries.push(path.join(PORTFOLIO_DIR, file));
+    if (!isVideoFile(file)) {
+      entries.push(path.join(PORTFOLIO_DIR, file));
+    }
   }
 
-  // Album images (recursively)
+  // Album images (recursively, excludes videos)
   if (fs.existsSync(ALBUMS_DIR)) {
     const walk = (dir: string) => {
       for (const item of fs.readdirSync(dir)) {

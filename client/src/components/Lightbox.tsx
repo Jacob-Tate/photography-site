@@ -8,6 +8,12 @@ import Histogram from './Histogram';
 
 const geocodeCache = new Map<string, string>();
 
+function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 function useReverseGeocode(lat: number | undefined, lon: number | undefined): string | null {
   const [name, setName] = useState<string | null>(null);
 
@@ -81,8 +87,9 @@ export default function Lightbox({
   const filmstripDrag = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
   const hasScrolledRef = useRef(false);
 
-  const isLoaded = loadedUrl === image.fullUrl;
-  const isZoomed = zoom > 1;
+  const isVideo = image.type === 'video';
+  const isLoaded = isVideo || loadedUrl === image.fullUrl;
+  const isZoomed = zoom > 1 && !isVideo; // Videos don't support zoom
   const showFilmstrip = images && currentIndex !== undefined && onNavigate && images.length > 1;
 
   // Reset zoom, position, and panels when image changes
@@ -388,13 +395,13 @@ export default function Lightbox({
         </button>
       )}
 
-      {/* Image container */}
+      {/* Image/Video container */}
       <div
         ref={containerRef}
-        className={`max-w-[90vw] ${showFilmstrip && !isZoomed ? 'max-h-[calc(90vh-80px)]' : 'max-h-[90vh]'} relative ${isZoomed ? 'cursor-grab' : 'cursor-zoom-in'} ${isDragging ? 'cursor-grabbing' : ''}`}
-        onWheel={handleWheel}
-        onDoubleClick={handleDoubleClick}
-        onMouseDown={handleMouseDown}
+        className={`max-w-[90vw] ${showFilmstrip && !isZoomed ? 'max-h-[calc(90vh-80px)]' : 'max-h-[90vh]'} relative ${!isVideo && (isZoomed ? 'cursor-grab' : 'cursor-zoom-in')} ${isDragging ? 'cursor-grabbing' : ''}`}
+        onWheel={isVideo ? undefined : handleWheel}
+        onDoubleClick={isVideo ? undefined : handleDoubleClick}
+        onMouseDown={isVideo ? undefined : handleMouseDown}
       >
         {/* Loading spinner - show when current image not loaded */}
         {!isLoaded && (
@@ -403,21 +410,33 @@ export default function Lightbox({
           </div>
         )}
 
-        {/* Image with key to force remount on URL change */}
-        <img
-          key={image.fullUrl}
-          src={image.fullUrl}
-          alt={image.filename}
-          className={`max-w-[90vw] ${showFilmstrip && !isZoomed ? 'max-h-[calc(90vh-80px)]' : 'max-h-[90vh]'} object-contain select-none transition-opacity duration-200 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{
-            transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
-            transformOrigin: 'center center',
-          }}
-          onLoad={() => setLoadedUrl(image.fullUrl)}
-          draggable={false}
-        />
+        {isVideo ? (
+          /* Video player */
+          <video
+            key={image.videoUrl}
+            src={image.videoUrl}
+            className={`max-w-[90vw] ${showFilmstrip ? 'max-h-[calc(90vh-80px)]' : 'max-h-[90vh]'} object-contain`}
+            controls
+            playsInline
+            autoPlay
+          />
+        ) : (
+          /* Image with key to force remount on URL change */
+          <img
+            key={image.fullUrl}
+            src={image.fullUrl}
+            alt={image.filename}
+            className={`max-w-[90vw] ${showFilmstrip && !isZoomed ? 'max-h-[calc(90vh-80px)]' : 'max-h-[90vh]'} object-contain select-none transition-opacity duration-200 ${
+              isLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
+              transformOrigin: 'center center',
+            }}
+            onLoad={() => setLoadedUrl(image.fullUrl)}
+            draggable={false}
+          />
+        )}
       </div>
 
       {/* Click outside to close (only when not zoomed) */}
@@ -426,10 +445,28 @@ export default function Lightbox({
       )}
 
       {/* Zoom/swipe hint */}
-      {isLoaded && !isZoomed && showControls && !image.exif && (
+      {isLoaded && !isZoomed && showControls && !image.exif && !isVideo && (
         <div className="absolute bottom-4 safe-bottom left-1/2 -translate-x-1/2 text-white/40 text-sm pointer-events-none text-center px-4">
           <span className="hidden sm:inline">Scroll or double-click to zoom</span>
           <span className="sm:hidden">Swipe to navigate • Pinch to zoom</span>
+        </div>
+      )}
+
+      {/* Video metadata panel */}
+      {isLoaded && showControls && isVideo && (
+        <div
+          className={`absolute right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] ${showFilmstrip ? 'bottom-[88px]' : 'bottom-4 safe-bottom'}`}
+          onClick={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
+          <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+            {image.duration !== undefined && (
+              <span className="whitespace-nowrap font-medium">Duration: {formatDuration(image.duration)}</span>
+            )}
+            {image.width > 0 && image.height > 0 && (
+              <span className="whitespace-nowrap text-white/70">{image.width} x {image.height}</span>
+            )}
+          </div>
         </div>
       )}
 
@@ -446,8 +483,8 @@ export default function Lightbox({
         />
       )}
 
-      {/* EXIF data panel */}
-      {isLoaded && showControls && image.exif && (
+      {/* EXIF data panel - hidden for videos */}
+      {isLoaded && showControls && image.exif && !isVideo && (
         <div
           className={`absolute right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] cursor-pointer select-none ${showFilmstrip && !isZoomed ? 'bottom-[88px]' : 'bottom-4 safe-bottom'}`}
           onClick={(e) => { e.stopPropagation(); setShowFullExif(!showFullExif); }}

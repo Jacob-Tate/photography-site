@@ -16,10 +16,10 @@ provider.titleForGoToPublishedCollection = "View Album"
 provider.titleForGoToPublishedPhoto = "View Photo"
 
 provider.hideSections = { 'exportLocation' }
-provider.allowFileFormats = { 'JPEG' }
+provider.allowFileFormats = { 'JPEG', 'ORIGINAL' }
 provider.allowColorSpaces = { 'sRGB' }
 provider.hidePrintResolution = true
-provider.canExportVideo = false
+provider.canExportVideo = true
 
 provider.exportPresetFields = {
   { key = 'serverUrl', default = 'http://localhost:3000' },
