@@ -111,11 +111,11 @@ export default function AlbumPage() {
   const pathParts = path.split('/');
   const breadcrumbs = pathParts.slice(0, -1);
 
-  return (
-    <div className="max-w-7xl mx-auto">
-      {/* Breadcrumb */}
-      <div className="px-5 py-3 sm:p-4 pb-0 safe-left safe-right">
-        <div className="mb-3 sm:mb-4 flex items-center text-sm flex-wrap gap-y-1">
+  if (album.needsPassword) {
+    return (
+      <div className="max-w-7xl mx-auto px-5 py-8 safe-left safe-right">
+        {/* Simple breadcrumb for locked view */}
+        <div className="mb-8 flex items-center text-sm flex-wrap gap-y-1">
           <Link to="/albums" className="text-neutral-400 hover:text-white active:text-white transition-colors">
             Albums
           </Link>
@@ -134,64 +134,124 @@ export default function AlbumPage() {
           <span className="text-white truncate">{album.name}</span>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-medium text-white truncate">{album.name}</h1>
-            <p className="text-neutral-500 text-sm sm:text-base">{album.imageCount} photos</p>
+        <PasswordGate
+          albumPath={album.path}
+          albumName={album.name}
+          onUnlock={refetch}
+        />
+      </div>
+    );
+  }
+
+  // Determine hero image
+  const heroImage = album.coverImage || sortedImages[0]?.fullUrl;
+
+  return (
+    <div>
+      {/* Hero Banner */}
+      <div className="relative w-full h-[50vh] min-h-[400px] overflow-hidden group">
+        {heroImage && (
+          <>
+            <img
+              src={heroImage}
+              alt={album.name}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-black/30" />
+          </>
+        )}
+        
+        {/* Hero Content */}
+        <div className="absolute inset-0 flex flex-col justify-between max-w-7xl mx-auto px-5 py-6 safe-left safe-right">
+          
+          {/* Top Area: Breadcrumbs */}
+          <div className="mt-[calc(3.5rem+var(--safe-area-top))] sm:mt-[calc(4rem+var(--safe-area-top))]">
+            <div className="flex items-center text-sm text-white/80 flex-wrap gap-y-1 drop-shadow-md">
+              <Link to="/albums" className="hover:text-white transition-colors">
+                Albums
+              </Link>
+              {breadcrumbs.map((part, i) => (
+                <span key={i} className="flex items-center">
+                  <span className="mx-2 opacity-60">/</span>
+                  <Link
+                    to={`/albums/${breadcrumbs.slice(0, i + 1).join('/')}`}
+                    className="hover:text-white transition-colors"
+                  >
+                    {part.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </Link>
+                </span>
+              ))}
+              <span className="mx-2 opacity-60">/</span>
+              <span className="font-medium text-white">{album.name}</span>
+            </div>
           </div>
-          {!album.needsPassword && (
-            <div className="flex items-center gap-2">
+
+          {/* Bottom Area: Title & Actions */}
+          <div className="flex flex-col sm:flex-row items-end justify-between gap-6">
+            <div className="text-white drop-shadow-lg">
+               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2 tracking-tight">{album.name}</h1>
+               <p className="text-lg text-white/80">{album.imageCount} photos</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+               <ShareButton type="album" targetPath={album.path} />
+               <AlbumDownloadButton albumPath={album.path} albumName={album.name} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-5 py-8 safe-left safe-right">
+        
+        {/* Description & Sort Toolbar */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-8">
+           {album.readme ? (
+             <div className="flex-1 max-w-3xl">
+               <ReadmeContent
+                 html={album.readme}
+                 images={sortedImages}
+                 onImageClick={lightbox.open}
+               />
+             </div>
+           ) : (
+             // Spacer if no readme
+             <div className="hidden md:block flex-1" />
+           )}
+           
+           {/* Sort Control - Sidebar on desktop, top on mobile */}
+           <div className={`shrink-0 flex items-center gap-2 ${!album.readme ? 'ml-auto' : ''}`}>
+              <span className="text-sm text-neutral-400">Sort by:</span>
               <select
                 value={sortOption}
                 onChange={e => setSortOption(e.target.value as SortOption)}
-                className="bg-neutral-800 text-neutral-300 text-sm border border-neutral-700 rounded-lg px-2 py-1.5 outline-none hover:border-neutral-600 focus:border-neutral-500 cursor-pointer"
+                className="bg-neutral-800 text-neutral-300 text-sm border border-neutral-700 rounded-lg px-3 py-2 outline-none hover:border-neutral-600 focus:border-neutral-500 cursor-pointer transition-colors"
               >
                 <option value="filename-asc">Filename (A→Z)</option>
                 <option value="filename-desc">Filename (Z→A)</option>
                 <option value="date-desc">Date taken (newest)</option>
                 <option value="date-asc">Date taken (oldest)</option>
               </select>
-              <ShareButton type="album" targetPath={album.path} />
-              <AlbumDownloadButton albumPath={album.path} albumName={album.name} />
-            </div>
-          )}
+           </div>
         </div>
 
-        {/* README */}
-        {album.readme && (
-          <ReadmeContent
-            html={album.readme}
+        <PhotoGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
+        
+        {lightbox.isOpen && lightbox.currentImage && (
+          <Lightbox
+            image={lightbox.currentImage}
+            onClose={lightbox.close}
+            onNext={lightbox.next}
+            onPrev={lightbox.prev}
+            hasNext={lightbox.hasNext}
+            hasPrev={lightbox.hasPrev}
             images={sortedImages}
-            onImageClick={lightbox.open}
+            currentIndex={lightbox.currentIndex!}
+            onNavigate={lightbox.navigateTo}
           />
         )}
       </div>
-
-      {/* Password gate or photos */}
-      {album.needsPassword ? (
-        <PasswordGate
-          albumPath={album.path}
-          albumName={album.name}
-          onUnlock={refetch}
-        />
-      ) : (
-        <>
-          <PhotoGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
-          {lightbox.isOpen && lightbox.currentImage && (
-            <Lightbox
-              image={lightbox.currentImage}
-              onClose={lightbox.close}
-              onNext={lightbox.next}
-              onPrev={lightbox.prev}
-              hasNext={lightbox.hasNext}
-              hasPrev={lightbox.hasPrev}
-              images={sortedImages}
-              currentIndex={lightbox.currentIndex!}
-              onNavigate={lightbox.navigateTo}
-            />
-          )}
-        </>
-      )}
     </div>
   );
 }

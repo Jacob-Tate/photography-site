@@ -64,6 +64,7 @@ export interface AlbumDetail {
   hasPassword: boolean;
   needsPassword: boolean;
   images?: ImageInfo[];
+  coverImage?: string;
   readme?: string;
   imageCount: number;
 }

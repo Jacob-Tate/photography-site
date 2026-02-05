@@ -379,7 +379,7 @@ function albumSort(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
-function getCoverImage(albumDir: string, images: string[]): string | undefined {
+export function getCoverImage(albumDir: string, images: string[]): string | undefined {
   const coverFile = path.join(albumDir, 'cover.txt');
   if (fs.existsSync(coverFile)) {
     const coverName = fs.readFileSync(coverFile, 'utf-8').trim();

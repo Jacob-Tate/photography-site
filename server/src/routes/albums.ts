@@ -2,7 +2,7 @@ import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { renderMarkdown } from '../services/markdown';
-import { scanAlbums, scanAlbumImages, getAlbumReadme, getAlbumDir, isHiddenDir } from '../services/scanner';
+import { scanAlbums, scanAlbumImages, getAlbumReadme, getAlbumDir, isHiddenDir, listImageFiles, getCoverImage } from '../services/scanner';
 import { getAlbumPassword, isAlbumUnlocked } from '../services/password';
 import { ALBUMS_DIR, IMAGE_EXTENSIONS } from '../config';
 import { recordAlbumView, recordIP } from '../services/analytics';
@@ -70,6 +70,8 @@ router.get('/*', async (req, res) => {
 
       const images = await scanAlbumImages(albumPath);
       const readme = getAlbumReadme(albumPath);
+      const imageFiles = listImageFiles(resolved);
+      const coverFilename = getCoverImage(resolved, imageFiles);
 
       recordAlbumView(albumPath);
       if (req.ip) recordIP(req.ip);
@@ -82,6 +84,7 @@ router.get('/*', async (req, res) => {
         hasPassword: !!password,
         needsPassword: false,
         images,
+        coverImage: coverFilename ? `/api/images/thumbnail/${albumPath}/${coverFilename}` : undefined,
         readme: readme ? await renderMarkdown(readme, albumPath) : undefined,
         imageCount: images.length,
       });
