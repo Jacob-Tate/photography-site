@@ -183,3 +183,15 @@ export async function fetchStatsFilter(field: string, value: string): Promise<{ 
   if (!res.ok) throw new Error('Failed to filter stats');
   return res.json();
 }
+
+export interface TimelineResponse {
+  images: ImageInfo[];
+  total: number;
+  hasMore: boolean;
+}
+
+export async function fetchTimeline(page: number, limit = 50): Promise<TimelineResponse> {
+  const res = await fetch(`/api/timeline?page=${page}&limit=${limit}`);
+  if (!res.ok) throw new Error('Failed to fetch timeline');
+  return res.json();
+}

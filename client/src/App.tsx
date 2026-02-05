@@ -8,11 +8,14 @@ import MapPage from './pages/MapPage';
 import SearchPage from './pages/SearchPage';
 import TagCloudPage from './pages/TagCloudPage';
 import StatsPage from './pages/StatsPage';
+import TimelinePage from './pages/TimelinePage';
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<PortfolioPage />} />
+        <Route path="timeline" element={<TimelinePage />} />
         <Route path="albums" element={<AlbumsPage />} />
         <Route path="albums/:groupSlug" element={<GroupPage />} />
         <Route path="albums/:groupSlug/:albumSlug" element={<AlbumPage />} />

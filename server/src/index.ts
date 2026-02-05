@@ -15,6 +15,7 @@ import mapRouter from './routes/map';
 import searchRouter from './routes/search';
 import tagsRouter from './routes/tags';
 import statsRouter from './routes/stats';
+import timelineRouter from './routes/timeline';
 import { preGenerateThumbnails } from './services/thumbnailQueue';
 import { preWarmMetadataCache } from './services/scanner';
 import { initAnalytics } from './services/analytics';
@@ -42,6 +43,7 @@ app.use('/api/map', mapRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/timeline', timelineRouter);
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '../../client/dist');
