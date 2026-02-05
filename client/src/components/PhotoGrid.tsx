@@ -26,13 +26,12 @@ function computePlacements(
 ): Placement[] {
   const unit = BASE_ROW + gap;
 
-  // 1. Pre-calculate spans for all images
+  // Compute natural spans for each image
   const spans = images.map(img => {
     if (!img.width || !img.height) {
       return { rowSpan: Math.round((colWidth + gap) / unit), colSpan: 1 };
     }
     const ratio = img.width / img.height;
-    // Cap colSpan at cols (e.g. mobile 2 cols, wide image wants 2 cols)
     const colSpan = ratio > 2.5 ? Math.min(2, cols) : 1;
     const displayWidth = colSpan * colWidth + (colSpan - 1) * gap;
     const displayHeight = displayWidth * (img.height / img.width);
@@ -40,22 +39,20 @@ function computePlacements(
     return { rowSpan, colSpan };
   });
 
+  // Place items greedily (left-to-right, top-to-bottom)
   const colEnds = new Array(cols).fill(0);
   const colLastSingle = new Array(cols).fill(-1); // last single-col item index per column
-  const placements: (Placement | null)[] = new Array(images.length).fill(null);
-  
-  // Pool of available image indices
-  const pool = Array.from({ length: images.length }, (_, i) => i);
+  const placements: Placement[] = [];
 
-  // Helper to find the best position for a given span
-  const findBestPosition = (span: { rowSpan: number, colSpan: number }) => {
+  for (let i = 0; i < images.length; i++) {
+    const { rowSpan, colSpan } = spans[i];
+
+    // Find the position with the lowest starting row, preferring leftmost
     let bestCol = 0;
     let bestRow = Infinity;
-    
-    // Search for lowest starting row
-    for (let c = 0; c <= cols - span.colSpan; c++) {
+    for (let c = 0; c <= cols - colSpan; c++) {
       let startRow = 0;
-      for (let dc = 0; dc < span.colSpan; dc++) {
+      for (let dc = 0; dc < colSpan; dc++) {
         startRow = Math.max(startRow, colEnds[c + dc]);
       }
       if (startRow < bestRow) {
@@ -64,99 +61,47 @@ function computePlacements(
       }
     }
 
-    // Calculate wasted space (gap created below the item placement)
-    let wasted = 0;
-    for (let dc = 0; dc < span.colSpan; dc++) {
-      wasted += (bestRow - colEnds[bestCol + dc]);
-    }
-    
-    return { row: bestRow, col: bestCol, wasted };
-  };
-
-  while (pool.length > 0) {
-    // 1. Try the next item in strictly sorted order
-    const headIdx = 0;
-    const originalIdx = pool[headIdx];
-    const span = spans[originalIdx];
-    const headPos = findBestPosition(span);
-
-    let chosenIndexInPool = headIdx;
-    let chosenPos = headPos;
-
-    // 2. If the greedy choice creates a gap, look ahead for a better fit
-    if (headPos.wasted > 0) {
-      const LOOKAHEAD = 10;
-      let minWasted = headPos.wasted;
-
-      for (let i = 1; i < Math.min(pool.length, LOOKAHEAD); i++) {
-        const candidateIdx = pool[i];
-        const candidateSpan = spans[candidateIdx];
-        const candidatePos = findBestPosition(candidateSpan);
-
-        // If we find an item that fits better (less wasted space), pick it
-        if (candidatePos.wasted < minWasted) {
-          minWasted = candidatePos.wasted;
-          chosenIndexInPool = i;
-          chosenPos = candidatePos;
-          if (minWasted === 0) break; // Perfect fit found
-        }
-      }
-    }
-
-    // 3. Place the chosen item
-    const finalIdx = pool[chosenIndexInPool];
-    const finalSpan = spans[finalIdx];
-    
-    // Remove from pool
-    pool.splice(chosenIndexInPool, 1);
-
-    // 4. For multi-column items, stretch single items above to fill gaps
-    if (finalSpan.colSpan > 1) {
-      const { row, col } = chosenPos;
-      
-      for (let dc = 0; dc < finalSpan.colSpan; dc++) {
-        const c = col + dc;
+    // For multi-col items, extend single-col items above to fill any gap
+    if (colSpan > 1) {
+      for (let dc = 0; dc < colSpan; dc++) {
+        const c = bestCol + dc;
         const lastIdx = colLastSingle[c];
-        
-        if (lastIdx !== -1) {
-          const above = placements[lastIdx];
-          if (above) {
-            const aboveEnd = above.row + above.rowSpan;
-            const gapRows = row - aboveEnd;
-            
-            // If there is empty space between the item above and this new item, stretch the one above
-            if (gapRows > 0) {
-              above.rowSpan += gapRows;
-              above.center = true;
-            }
+        if (lastIdx < 0) continue;
+        const above = placements[lastIdx];
+        const aboveEnd = above.row + above.rowSpan;
+
+        // Find the nearest item in this column after the above item —
+        // we can only extend up to that point, not past it
+        let maxExtend = bestRow;
+        for (let j = 0; j < placements.length; j++) {
+          if (j === lastIdx) continue;
+          const other = placements[j];
+          if (other.col > c || other.col + other.colSpan <= c) continue;
+          if (other.row >= aboveEnd && other.row < maxExtend) {
+            maxExtend = other.row;
           }
         }
+
+        const gapRows = maxExtend - aboveEnd;
+        if (gapRows > 0) {
+          above.rowSpan += gapRows;
+          above.center = true;
+        }
       }
     }
 
-    // Record placement
-    placements[finalIdx] = {
-      row: chosenPos.row,
-      col: chosenPos.col,
-      rowSpan: finalSpan.rowSpan,
-      colSpan: finalSpan.colSpan,
-      center: false,
-    };
+    placements.push({ row: bestRow, col: bestCol, rowSpan, colSpan, center: false });
 
-    // Update column heights
-    for (let dc = 0; dc < finalSpan.colSpan; dc++) {
-      const c = chosenPos.col + dc;
-      colEnds[c] = chosenPos.row + finalSpan.rowSpan;
-      if (finalSpan.colSpan === 1) {
-        colLastSingle[c] = finalIdx;
-      } else {
-        // Multi-col items break the chain for stretching
-        colLastSingle[c] = -1;
+    // Update column tracking
+    for (let dc = 0; dc < colSpan; dc++) {
+      colEnds[bestCol + dc] = bestRow + rowSpan;
+      if (colSpan === 1) {
+        colLastSingle[bestCol + dc] = i;
       }
     }
   }
 
-  return placements as Placement[];
+  return placements;
 }
 
 export default function PhotoGrid({ images, onPhotoClick, lightboxOpen }: PhotoGridProps) {
