@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config';
 import { ensureThumbnail } from '../services/thumbnail';
+import { ensureSocialExport, getPresetById, SOCIAL_PRESETS } from '../services/socialExport';
 import { recordPhotoView, recordIP } from '../services/analytics';
 
 const router = Router();
@@ -87,6 +88,40 @@ router.get('/download/*', (req, res) => {
   const filename = path.basename(absPath);
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.sendFile(absPath);
+});
+
+// GET /api/images/social/:preset/*
+router.get('/social/:preset/*', async (req, res) => {
+  try {
+    const presetId = req.params.preset;
+    const relativePath = (req.params as unknown as Record<string, string>)[0];
+
+    const preset = getPresetById(presetId);
+    if (!preset) {
+      res.status(400).json({ error: 'Invalid preset', validPresets: SOCIAL_PRESETS.map(p => p.id) });
+      return;
+    }
+
+    const absPath = validatePath(relativePath);
+    if (!absPath) {
+      res.status(404).json({ error: 'Image not found' });
+      return;
+    }
+
+    const exportPath = await ensureSocialExport(absPath, relativePath, preset);
+
+    // Build descriptive filename: originalname-platform-preset.ext
+    const originalName = path.parse(relativePath).name;
+    const ext = preset.format === 'png' ? 'png' : 'jpg';
+    const downloadFilename = `${originalName}-${preset.platform.toLowerCase().replace('/', '-')}-${preset.name.toLowerCase()}.${ext}`;
+
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Content-Type', preset.format === 'png' ? 'image/png' : 'image/jpeg');
+    res.sendFile(exportPath);
+  } catch (err) {
+    console.error('Social export error:', err);
+    res.status(500).json({ error: 'Failed to generate social export' });
+  }
 });
 
 export default router;

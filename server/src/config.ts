@@ -20,5 +20,6 @@ export const config = {
 export const PORTFOLIO_DIR = path.join(config.photosDir, 'portfolio');
 export const ALBUMS_DIR = path.join(config.photosDir, 'albums');
 export const THUMBNAILS_DIR = path.join(config.photosDir, '.thumbnails');
+export const SOCIAL_EXPORTS_DIR = path.join(config.photosDir, '.social-exports');
 
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.tiff', '.tif'];

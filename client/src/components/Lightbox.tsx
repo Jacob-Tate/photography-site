@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { ImageInfo } from '../api/client';
 import DownloadButton from './DownloadButton';
 import ShareButton from './ShareButton';
+import SocialExportButton from './SocialExportButton';
+import SocialExportPanel from './SocialExportPanel';
 import Histogram from './Histogram';
 
 const geocodeCache = new Map<string, string>();
@@ -73,6 +75,7 @@ export default function Lightbox({
   const lastTouchDistanceRef = useRef<number | null>(null);
   const [showControls, setShowControls] = useState(true);
   const [showFullExif, setShowFullExif] = useState(false);
+  const [showSocialExport, setShowSocialExport] = useState(false);
 
   const filmstripRef = useRef<HTMLDivElement>(null);
   const filmstripDrag = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
@@ -82,11 +85,12 @@ export default function Lightbox({
   const isZoomed = zoom > 1;
   const showFilmstrip = images && currentIndex !== undefined && onNavigate && images.length > 1;
 
-  // Reset zoom, position, and exif panel when image changes
+  // Reset zoom, position, and panels when image changes
   useEffect(() => {
     setZoom(1);
     setPosition({ x: 0, y: 0 });
     setShowFullExif(false);
+    setShowSocialExport(false);
   }, [image.fullUrl]);
 
   // Scroll filmstrip to center a given index
@@ -333,6 +337,10 @@ export default function Lightbox({
         {/* Right controls */}
         <div className="flex items-center gap-1 sm:gap-2">
           <ShareButton type="image" targetPath={image.path} compact />
+          <SocialExportButton
+            onClick={() => setShowSocialExport(!showSocialExport)}
+            isActive={showSocialExport}
+          />
           <DownloadButton url={image.downloadUrl} filename={image.filename} />
           <button
             onClick={onClose}
@@ -345,6 +353,14 @@ export default function Lightbox({
           </button>
         </div>
       </div>
+
+      {/* Social Export Panel */}
+      {showSocialExport && (
+        <SocialExportPanel
+          imagePath={image.path}
+          onClose={() => setShowSocialExport(false)}
+        />
+      )}
 
       {/* Previous button - hidden on touch devices */}
       {hasPrev && !isZoomed && (
