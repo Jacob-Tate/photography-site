@@ -28,14 +28,6 @@ export default function Layout() {
             Portfolio
           </Link>
           <Link
-            to="/timeline"
-            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
-              location.pathname === '/timeline' ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
-            } transition-colors`}
-          >
-            Timeline
-          </Link>
-          <Link
             to="/albums"
             className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
               location.pathname.startsWith('/albums') ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
@@ -58,6 +50,14 @@ export default function Layout() {
             } transition-colors`}
           >
             Tags
+          </Link>
+          <Link
+            to="/timeline"
+            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
+              location.pathname === '/timeline' ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
+            } transition-colors`}
+          >
+            Timeline
           </Link>
 
           {/* Search */}
