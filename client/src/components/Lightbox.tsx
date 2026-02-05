@@ -5,6 +5,7 @@ import ShareButton from './ShareButton';
 import SocialExportButton from './SocialExportButton';
 import SocialExportPanel from './SocialExportPanel';
 import Histogram from './Histogram';
+import MapTrailButton from './MapTrailButton';
 
 const geocodeCache = new Map<string, string>();
 
@@ -54,6 +55,7 @@ interface LightboxProps {
   images?: ImageInfo[];
   currentIndex?: number;
   onNavigate?: (index: number) => void;
+  hideMapButton?: boolean;
 }
 
 export default function Lightbox({
@@ -66,6 +68,7 @@ export default function Lightbox({
   images,
   currentIndex,
   onNavigate,
+  hideMapButton,
 }: LightboxProps) {
   const locationName = useReverseGeocode(image.exif?.gps?.latitude, image.exif?.gps?.longitude);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
@@ -344,6 +347,9 @@ export default function Lightbox({
         {/* Right controls */}
         <div className="flex items-center gap-1 sm:gap-2">
           <ShareButton type="image" targetPath={image.path} compact />
+          {images && images.length > 1 && !hideMapButton && (
+            <MapTrailButton images={images} currentImage={image} compact />
+          )}
           <SocialExportButton
             onClick={() => setShowSocialExport(!showSocialExport)}
             isActive={showSocialExport}

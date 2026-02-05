@@ -10,6 +10,7 @@ import PasswordGate from '../components/PasswordGate';
 import AlbumDownloadButton from '../components/AlbumDownloadButton';
 import ShareButton from '../components/ShareButton';
 import ReadmeContent from '../components/ReadmeContent';
+import MapTrailButton from '../components/MapTrailButton';
 
 type SortOption = 'filename-asc' | 'filename-desc' | 'date-desc' | 'date-asc';
 
@@ -146,6 +147,7 @@ export default function GroupPage() {
               
               <div className="flex items-center gap-3">
                  <ShareButton type="album" targetPath={album.path} />
+                 <MapTrailButton images={sortedImages} />
                  <AlbumDownloadButton albumPath={album.path} albumName={album.name} />
               </div>
             </div>
