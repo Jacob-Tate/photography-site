@@ -241,6 +241,16 @@ function provider.updateCollectionSettings(publishSettings, info)
       if not ok2 then
         LrDialogs.message('Stats Error', err2 or 'Could not update stats exclusion', 'warning')
       end
+
+      -- Check current trip days status and toggle if needed
+      local currentTripDays = UploadUtils.getTripDays(serverUrl, apiKey, destination)
+      local wantTripDays = settings.tripDays or false
+      if currentTripDays ~= wantTripDays then
+        local newState, err3 = UploadUtils.toggleTripDays(serverUrl, apiKey, destination)
+        if newState == nil then
+          LrDialogs.message('Trip Days Error', err3 or 'Could not update trip days mode', 'warning')
+        end
+      end
     end
   end)
 end
@@ -283,6 +293,17 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
       LrTasks.startAsyncTask(function()
         local ignored = UploadUtils.getIgnoreStats(publishSettings.serverUrl, publishSettings.apiKey, settings.destination)
         settings.ignoreStats = ignored
+      end)
+    end
+  end
+
+  if settings.tripDays == nil then
+    settings.tripDays = false
+    -- Fetch current trip days status from server
+    if publishSettings.serverUrl and publishSettings.apiKey and settings.destination then
+      LrTasks.startAsyncTask(function()
+        local tripDays = UploadUtils.getTripDays(publishSettings.serverUrl, publishSettings.apiKey, settings.destination)
+        settings.tripDays = tripDays
       end)
     end
   end
@@ -335,6 +356,24 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
         value = bind 'ignoreStats',
         title = 'Exclude from Stats',
       },
+    },
+
+    f:row {
+      f:static_text {
+        title = '',
+        alignment = 'right',
+      },
+      f:column {
+        f:checkbox {
+          value = bind 'tripDays',
+          title = 'Trip Days Mode',
+        },
+        f:static_text {
+          title = "Group photos by day (for travel/multi-day shoots)",
+          font = "<system/small>",
+          text_color = import 'LrColor'(0.6, 0.6, 0.6),
+        },
+      }
     }
   }
 end

@@ -335,4 +335,45 @@ function UploadUtils.setCaption(serverUrl, apiKey, imagePath, content)
   return true
 end
 
+function UploadUtils.getTripDays(serverUrl, apiKey, albumPath)
+  local url = serverUrl .. '/api/manage/tripdays?albumPath=' .. urlencode(albumPath)
+  local headers = {
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.get(url, headers)
+
+  if not result or (hdrs and hdrs.status and hdrs.status >= 400) then
+    return false
+  end
+
+  local success, data = pcall(json_decode, result)
+  if not success or not data then
+    return false
+  end
+
+  return data.tripDays == true
+end
+
+function UploadUtils.toggleTripDays(serverUrl, apiKey, albumPath)
+  local url = serverUrl .. '/api/manage/tripdays'
+  local body = json_encode({ albumPath = albumPath })
+  local headers = {
+    { field = 'Content-Type', value = 'application/json' },
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.post(url, body, headers)
+
+  if not result then return nil, 'Network error' end
+  if hdrs and hdrs.status and hdrs.status >= 400 then return nil, 'Failed to toggle trip days' end
+
+  local success, data = pcall(json_decode, result)
+  if not success or not data then
+    return nil, 'Invalid JSON response'
+  end
+
+  return data.tripDays
+end
+
 return UploadUtils

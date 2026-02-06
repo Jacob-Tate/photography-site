@@ -327,4 +327,82 @@ router.post('/caption', apiKeyAuth, (req, res) => {
   }
 });
 
+/**
+ * Trip Days Feature
+ *
+ * When an album has a `trip_days.txt` file in its directory, the album is displayed
+ * with photos grouped by day based on their EXIF dateTaken field.
+ *
+ * The trip_days.txt file acts as a flag - its presence enables the feature.
+ * The file can optionally contain configuration in the future, but currently
+ * just needs to exist.
+ *
+ * In the UI:
+ * - Album page shows photos grouped with "Day 1: (date)", "Day 2: (date)" headers
+ * - Map trail view shows separate routes per day with checkboxes to filter
+ *
+ * This can only be toggled via:
+ * - Lightroom plugin (API key required)
+ * - Manually creating/deleting trip_days.txt in the album folder
+ */
+
+// POST /api/manage/tripdays - Toggle trip days mode (API key required)
+router.post('/tripdays', apiKeyAuth, (req, res) => {
+  const { albumPath } = req.body;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  if (!fs.existsSync(resolvedDir) || !fs.statSync(resolvedDir).isDirectory()) {
+    res.status(404).json({ error: 'Album not found' });
+    return;
+  }
+
+  const tripDaysFile = path.join(resolvedDir, 'trip_days.txt');
+
+  try {
+    if (fs.existsSync(tripDaysFile)) {
+      // Remove the file to disable trip days
+      fs.unlinkSync(tripDaysFile);
+      res.json({ tripDays: false });
+    } else {
+      // Create the file to enable trip days
+      fs.writeFileSync(tripDaysFile, '# Trip Days Mode\n# This file enables day-by-day grouping for this album.\n# Photos are grouped by their EXIF date taken.\n');
+      res.json({ tripDays: true });
+    }
+  } catch (err) {
+    console.error('Trip days toggle error:', err);
+    res.status(500).json({ error: 'Failed to toggle trip days' });
+  }
+});
+
+// GET /api/manage/tripdays - Get trip days status (API key required)
+router.get('/tripdays', apiKeyAuth, (req, res) => {
+  const albumPath = req.query.albumPath as string;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const tripDaysFile = path.join(resolvedDir, 'trip_days.txt');
+  res.json({ tripDays: fs.existsSync(tripDaysFile) });
+});
+
 export default router;

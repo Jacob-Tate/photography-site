@@ -5,6 +5,7 @@ import { useLightbox } from '../hooks/useLightbox';
 import { GroupDetail, AlbumDetail, ImageInfo } from '../api/client';
 import AlbumCard from '../components/AlbumCard';
 import PhotoGrid from '../components/PhotoGrid';
+import TripDaysGrid from '../components/TripDaysGrid';
 import Lightbox from '../components/Lightbox';
 import PasswordGate from '../components/PasswordGate';
 import AlbumDownloadButton from '../components/AlbumDownloadButton';
@@ -55,7 +56,8 @@ export default function GroupPage() {
   const [sortOption, setSortOption] = useState<SortOption>('date-desc');
 
   const { data, loading, error, refetch } = useAlbum(groupSlug || '');
-  const images = (data as AlbumDetail)?.images || [];
+  const albumData = data?.type === 'album' ? data as AlbumDetail : undefined;
+  const images = albumData?.images || [];
   const sortedImages = useMemo(() => sortImages(images, sortOption), [images, sortOption]);
   const lightbox = useLightbox(sortedImages);
 
@@ -169,8 +171,9 @@ export default function GroupPage() {
                <div className="hidden md:block flex-1" />
              )}
              
+             {/* Sort Control */}
              <div className={`shrink-0 flex items-center gap-2 ${!album.readme ? 'ml-auto' : ''}`}>
-                <span className="text-sm text-neutral-400">Sort by:</span>
+                <span className="text-sm text-neutral-400">Sort:</span>
                 <select
                   value={sortOption}
                   onChange={e => setSortOption(e.target.value as SortOption)}
@@ -184,7 +187,11 @@ export default function GroupPage() {
              </div>
           </div>
 
-          <PhotoGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
+          {albumData?.tripDays ? (
+            <TripDaysGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
+          ) : (
+            <PhotoGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
+          )}
           
           {lightbox.isOpen && lightbox.currentImage && (
             <Lightbox

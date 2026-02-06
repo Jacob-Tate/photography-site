@@ -1,9 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ImageInfo } from '../api/client';
 import Lightbox from './Lightbox';
+import { groupImagesByDay } from '../utils/tripDays';
+
+// Colors for different days (cycle through these)
+const DAY_COLORS = [
+  '#3b82f6', // blue
+  '#ef4444', // red
+  '#22c55e', // green
+  '#f59e0b', // amber
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#f97316', // orange
+];
 
 // Fix default marker icons for Leaflet
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -162,13 +175,55 @@ export default function MapTrailModal({ images, currentImage, onClose }: MapTrai
   const modalRef = useRef<HTMLDivElement>(null);
   const [showAllMarkers, setShowAllMarkers] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [showDaySeparation, setShowDaySeparation] = useState(false);
+  const [visibleDays, setVisibleDays] = useState<Set<string>>(new Set());
 
-  // Generate positions array for the polyline
-  const positions: [number, number][] = images
+  // Group images by day
+  const dayGroups = useMemo(() => groupImagesByDay(images), [images]);
+  const hasMultipleDays = dayGroups.length > 1 && dayGroups[0].dateKey !== 'unknown';
+
+  // Initialize visible days when day groups change
+  useEffect(() => {
+    setVisibleDays(new Set(dayGroups.map(g => g.dateKey)));
+  }, [dayGroups]);
+
+  // Get visible images based on day filter
+  const visibleImages = useMemo(() => {
+    if (!showDaySeparation) return images;
+    return images.filter(img => {
+      const dateKey = img.exif?.dateTaken
+        ? new Date(img.exif.dateTaken.replace(' at ', ' ')).toISOString().split('T')[0]
+        : 'unknown';
+      return visibleDays.has(dateKey);
+    });
+  }, [images, showDaySeparation, visibleDays]);
+
+  // Generate positions array for the polyline (all visible images)
+  const positions: [number, number][] = visibleImages
     .filter(img => img.exif?.gps)
     .map(img => [img.exif!.gps!.latitude, img.exif!.gps!.longitude]);
 
-  const stats = calculateStats(images);
+  const stats = calculateStats(visibleImages);
+
+  const toggleDay = (dateKey: string) => {
+    setVisibleDays(prev => {
+      const next = new Set(prev);
+      if (next.has(dateKey)) {
+        next.delete(dateKey);
+      } else {
+        next.add(dateKey);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllDays = () => {
+    if (visibleDays.size === dayGroups.length) {
+      setVisibleDays(new Set());
+    } else {
+      setVisibleDays(new Set(dayGroups.map(g => g.dateKey)));
+    }
+  };
 
   // Close on escape key (only if lightbox is not open)
   useEffect(() => {
@@ -227,7 +282,7 @@ export default function MapTrailModal({ images, currentImage, onClose }: MapTrai
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
               <input
                 type="checkbox"
@@ -237,6 +292,17 @@ export default function MapTrailModal({ images, currentImage, onClose }: MapTrai
               />
               Show all points
             </label>
+            {hasMultipleDays && (
+              <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showDaySeparation}
+                  onChange={(e) => setShowDaySeparation(e.target.checked)}
+                  className="rounded border-white/30"
+                />
+                Separate days
+              </label>
+            )}
             <button
               onClick={onClose}
               className="p-2 text-white/70 hover:text-white transition-colors"
@@ -248,6 +314,39 @@ export default function MapTrailModal({ images, currentImage, onClose }: MapTrai
             </button>
           </div>
         </div>
+
+        {/* Day Filter Panel (when day separation is enabled) */}
+        {showDaySeparation && hasMultipleDays && (
+          <div className="px-4 py-2 border-b border-white/10 flex flex-wrap items-center gap-2">
+            <button
+              onClick={toggleAllDays}
+              className="text-xs text-white/60 hover:text-white transition-colors"
+            >
+              {visibleDays.size === dayGroups.length ? 'Hide all' : 'Show all'}
+            </button>
+            <span className="text-white/30">|</span>
+            {dayGroups.map((group, idx) => (
+              <label
+                key={group.dateKey}
+                className="flex items-center gap-1.5 text-xs cursor-pointer group"
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleDays.has(group.dateKey)}
+                  onChange={() => toggleDay(group.dateKey)}
+                  className="rounded border-white/30"
+                />
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: DAY_COLORS[idx % DAY_COLORS.length] }}
+                />
+                <span className="text-white/70 group-hover:text-white transition-colors">
+                  Day {group.dayNumber}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
 
         {/* Map */}
         <div className="flex-1 relative">
@@ -262,49 +361,81 @@ export default function MapTrailModal({ images, currentImage, onClose }: MapTrai
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
 
-            {/* Trail polyline */}
-            <Polyline
-              positions={positions}
-              pathOptions={{
-                color: '#3b82f6',
-                weight: 3,
-                opacity: 0.8,
-                lineCap: 'round',
-                lineJoin: 'round',
-              }}
-            />
+            {/* Trail polylines - either single or per-day */}
+            {showDaySeparation && hasMultipleDays ? (
+              // Render separate polyline for each visible day
+              dayGroups.map((group, idx) => {
+                if (!visibleDays.has(group.dateKey)) return null;
+                const dayPositions: [number, number][] = group.images
+                  .filter(img => img.exif?.gps)
+                  .map(img => [img.exif!.gps!.latitude, img.exif!.gps!.longitude]);
+                if (dayPositions.length < 2) return null;
+                return (
+                  <Polyline
+                    key={group.dateKey}
+                    positions={dayPositions}
+                    pathOptions={{
+                      color: DAY_COLORS[idx % DAY_COLORS.length],
+                      weight: 3,
+                      opacity: 0.8,
+                      lineCap: 'round',
+                      lineJoin: 'round',
+                    }}
+                  />
+                );
+              })
+            ) : (
+              // Single polyline for all images
+              <Polyline
+                positions={positions}
+                pathOptions={{
+                  color: '#3b82f6',
+                  weight: 3,
+                  opacity: 0.8,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+            )}
 
             {/* Start marker */}
-            <Marker position={positions[0]} icon={startIcon}>
-              <Popup className="photo-popup">
-                <div className="marker-popup">
-                  <img
-                    src={images[0].thumbnailUrl}
-                    alt={images[0].filename}
-                    className="cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => setLightboxIndex(0)}
-                  />
-                  <div className="popup-info">
-                    <strong>Start</strong>
-                    <span>{formatDate(images[0].exif?.dateTaken) || images[0].filename}</span>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+            {visibleImages.length > 0 && visibleImages[0].exif?.gps && (() => {
+              const startImage = visibleImages[0];
+              const startIdx = images.findIndex(img => img.path === startImage.path);
+              return (
+                <Marker position={[startImage.exif!.gps!.latitude, startImage.exif!.gps!.longitude]} icon={startIcon}>
+                  <Popup className="photo-popup">
+                    <div className="marker-popup">
+                      <img
+                        src={startImage.thumbnailUrl}
+                        alt={startImage.filename}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => startIdx !== -1 && setLightboxIndex(startIdx)}
+                      />
+                      <div className="popup-info">
+                        <strong>Start</strong>
+                        <span>{formatDate(startImage.exif?.dateTaken) || startImage.filename}</span>
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })()}
 
             {/* End marker */}
-            {positions.length > 1 && (() => {
-              const lastImage = images[images.length - 1];
-              const lastIndex = images.length - 1;
+            {visibleImages.length > 1 && (() => {
+              const lastImage = visibleImages[visibleImages.length - 1];
+              if (!lastImage.exif?.gps) return null;
+              const lastIdx = images.findIndex(img => img.path === lastImage.path);
               return (
-                <Marker position={positions[positions.length - 1]} icon={endIcon}>
+                <Marker position={[lastImage.exif.gps.latitude, lastImage.exif.gps.longitude]} icon={endIcon}>
                   <Popup className="photo-popup">
                     <div className="marker-popup">
                       <img
                         src={lastImage.thumbnailUrl}
                         alt={lastImage.filename}
                         className="cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setLightboxIndex(lastIndex)}
+                        onClick={() => lastIdx !== -1 && setLightboxIndex(lastIdx)}
                       />
                       <div className="popup-info">
                         <strong>End</strong>
@@ -343,11 +474,12 @@ export default function MapTrailModal({ images, currentImage, onClose }: MapTrai
             })()}
 
             {/* Intermediate points (optional) */}
-            {showAllMarkers && images.slice(1, -1).map((img, idx) => {
+            {showAllMarkers && visibleImages.slice(1, -1).map((img, idx) => {
               if (!img.exif?.gps) return null;
               // Skip if this is the current image (already shown)
               if (currentImage && img.path === currentImage.path) return null;
-              const imageIndex = idx + 1; // +1 because we sliced from index 1
+              // Find the index in the original images array for lightbox
+              const imageIndex = images.findIndex(i => i.path === img.path);
               return (
                 <Marker
                   key={img.path}
@@ -360,7 +492,7 @@ export default function MapTrailModal({ images, currentImage, onClose }: MapTrai
                         src={img.thumbnailUrl}
                         alt={img.filename}
                         className="cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setLightboxIndex(imageIndex)}
+                        onClick={() => imageIndex !== -1 && setLightboxIndex(imageIndex)}
                       />
                       <div className="popup-info">
                         <span>#{idx + 2}</span>

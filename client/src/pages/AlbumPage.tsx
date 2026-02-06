@@ -4,6 +4,7 @@ import { useAlbum } from '../hooks/usePhotos';
 import { useLightbox } from '../hooks/useLightbox';
 import { AlbumDetail, ImageInfo } from '../api/client';
 import PhotoGrid from '../components/PhotoGrid';
+import TripDaysGrid from '../components/TripDaysGrid';
 import Lightbox from '../components/Lightbox';
 import PasswordGate from '../components/PasswordGate';
 import AlbumDownloadButton from '../components/AlbumDownloadButton';
@@ -64,7 +65,8 @@ export default function AlbumPage() {
   const [sortOption, setSortOption] = useState<SortOption>('date-desc');
 
   const { data, loading, error, refetch } = useAlbum(path);
-  const images = (data as AlbumDetail)?.images || [];
+  const album = data as AlbumDetail | undefined;
+  const images = album?.images || [];
   const sortedImages = useMemo(() => sortImages(images, sortOption), [images, sortOption]);
   const lightbox = useLightbox(sortedImages);
 
@@ -98,15 +100,13 @@ export default function AlbumPage() {
     );
   }
 
-  if (data.type !== 'album') {
+  if (data.type !== 'album' || !album) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-red-400">
         Not an album
       </div>
     );
   }
-
-  const album = data as AlbumDetail;
 
   // Build breadcrumb
   const pathParts = path.split('/');
@@ -222,9 +222,9 @@ export default function AlbumPage() {
              <div className="hidden md:block flex-1" />
            )}
            
-           {/* Sort Control - Sidebar on desktop, top on mobile */}
+           {/* Sort Control */}
            <div className={`shrink-0 flex items-center gap-2 ${!album.readme ? 'ml-auto' : ''}`}>
-              <span className="text-sm text-neutral-400">Sort by:</span>
+              <span className="text-sm text-neutral-400">Sort:</span>
               <select
                 value={sortOption}
                 onChange={e => setSortOption(e.target.value as SortOption)}
@@ -238,7 +238,11 @@ export default function AlbumPage() {
            </div>
         </div>
 
-        <PhotoGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
+        {album.tripDays ? (
+          <TripDaysGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
+        ) : (
+          <PhotoGrid images={sortedImages} onPhotoClick={lightbox.open} lightboxOpen={lightbox.isOpen} />
+        )}
         
         {lightbox.isOpen && lightbox.currentImage && (
           <Lightbox

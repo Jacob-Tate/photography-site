@@ -8,7 +8,8 @@ A self-hosted photography portfolio and gallery application with album managemen
 - Albums organized into groups and collections
 - Password-protected albums
 - EXIF/IPTC metadata display (camera, lens, exposure, GPS, keywords)
-- Interactive map showing geotagged photos
+- Interactive map showing geotagged photos with trail/path view
+- Trip Days mode for grouping photos by day (travel/hikes)
 - Keyword search across all images
 - Tag cloud showing all keywords sized by frequency
 - Stats dashboard with gear usage, shooting times, and storage overview
@@ -117,6 +118,42 @@ Click the share button on any album or in the lightbox to copy a shareable link 
 - **Album**: copies the album URL (e.g. `https://example.com/albums/japan`)
 - **Image**: copies a direct link that opens the lightbox to that image (e.g. `https://example.com/albums/japan?image=DSC1234.jpg`)
 
+## Map Trail
+
+Click the Map button on any album or in the lightbox to view geotagged photos on an interactive map with their path/trail drawn connecting shot locations chronologically.
+
+Features:
+- Trail line connecting photos in order of capture time
+- Start (green) and End (red) markers
+- Current photo marker (blue) when opened from lightbox
+- "Show all points" option to display markers for every photo
+- Click any marker thumbnail to view that photo in the lightbox
+- Distance traveled and duration shown in the header
+
+## Trip Days
+
+For travel or multi-day shoots, enable "Trip Days" mode to group photos by day:
+
+1. Toggle the "Trip Days" switch on any album page
+2. Photos are automatically grouped by their EXIF capture date
+3. Each day displays with a header: "Day 1: Monday, January 15, 2024"
+4. In Map view, enable "Separate days" to see each day's route in a different color with day filter checkboxes
+
+How it works:
+- Toggling Trip Days creates a `trip_days.txt` file in the album directory
+- The file acts as a flag - its presence enables the feature
+- Delete the file or toggle off to disable day grouping
+
+```
+photos/
+  albums/
+    japan-trip/
+      trip_days.txt    # Enables day-by-day grouping
+      DSC1234.jpg
+      DSC1235.jpg
+      ...
+```
+
 ## API Routes
 
 | Route | Description |
@@ -134,6 +171,7 @@ Click the share button on any album or in the lightbox to copy a shareable link 
 | `/api/manage/delete` | Delete a photo (API key required) |
 | `/api/manage/password` | Set or remove an album password (API key required) |
 | `/api/manage/cover` | Set or remove an album cover image (API key required) |
+| `/api/manage/tripdays` | Toggle trip days mode for an album |
 
 ## Lightroom Plugin
 

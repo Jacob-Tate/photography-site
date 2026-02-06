@@ -9,6 +9,24 @@ import { recordAlbumView, recordIP } from '../services/analytics';
 
 const router = Router();
 
+/**
+ * Trip Days Feature
+ *
+ * When an album has a `trip_days.txt` file in its directory, the album is displayed
+ * with photos grouped by day based on their EXIF dateTaken field.
+ *
+ * The trip_days.txt file acts as a flag - its presence enables the feature.
+ * The file can optionally contain configuration in the future, but currently
+ * just needs to exist.
+ *
+ * In the UI:
+ * - Album page shows photos grouped with "Day 1: (date)", "Day 2: (date)" headers
+ * - Map trail view shows separate routes per day with checkboxes to filter
+ */
+function hasTripDays(albumDir: string): boolean {
+  return fs.existsSync(path.join(albumDir, 'trip_days.txt'));
+}
+
 // GET /api/albums - album tree
 router.get('/', async (_req, res) => {
   try {
@@ -72,6 +90,7 @@ router.get('/*', async (req, res) => {
       const readme = getAlbumReadme(albumPath);
       const imageFiles = listImageFiles(resolved);
       const coverFilename = getCoverImage(resolved, imageFiles);
+      const tripDays = hasTripDays(resolved);
 
       recordAlbumView(albumPath);
       if (req.ip) recordIP(req.ip);
@@ -87,6 +106,7 @@ router.get('/*', async (req, res) => {
         coverImage: coverFilename ? `/api/images/thumbnail/${albumPath}/${coverFilename}` : undefined,
         readme: readme ? await renderMarkdown(readme, albumPath) : undefined,
         imageCount: images.length,
+        tripDays,
       });
     } else if (hasSubDirs) {
       // It's a group

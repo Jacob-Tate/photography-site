@@ -70,6 +70,8 @@ export interface AlbumDetail {
   coverImage?: string;
   readme?: string;
   imageCount: number;
+  /** When true, photos should be grouped by day based on EXIF dateTaken */
+  tripDays?: boolean;
 }
 
 export interface GroupDetail {
@@ -197,5 +199,19 @@ export interface TimelineResponse {
 export async function fetchTimeline(page: number, limit = 50): Promise<TimelineResponse> {
   const res = await fetch(`/api/timeline?page=${page}&limit=${limit}`);
   if (!res.ok) throw new Error('Failed to fetch timeline');
+  return res.json();
+}
+
+/**
+ * Toggle trip days mode for an album.
+ * Creates or deletes trip_days.txt in the album directory.
+ */
+export async function toggleTripDays(albumPath: string): Promise<{ tripDays: boolean }> {
+  const res = await fetch('/api/manage/tripdays', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ albumPath }),
+  });
+  if (!res.ok) throw new Error('Failed to toggle trip days');
   return res.json();
 }
