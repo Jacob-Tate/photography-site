@@ -65,6 +65,35 @@ body {
   display: none;
 }
 
+/* Thin scrollbar for nav on mobile, hidden on desktop */
+.nav-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+.nav-scrollbar::-webkit-scrollbar {
+  height: 3px;
+}
+.nav-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+.nav-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+/* Hide nav scrollbar on larger screens where it fits */
+@media (min-width: 640px) {
+  .nav-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .nav-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Smooth scrolling for the app */
 @media (prefers-reduced-motion: no-preference) {
   html {

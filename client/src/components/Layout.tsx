@@ -18,10 +18,10 @@ export default function Layout() {
   return (
     <div className="min-h-screen min-h-[100dvh]">
       <nav className="fixed top-0 left-0 right-0 z-40 bg-neutral-950/90 backdrop-blur-sm border-b border-neutral-800 safe-top">
-        <div className="max-w-7xl mx-auto px-5 sm:px-4 safe-left safe-right py-3 sm:py-4 flex items-center gap-6 sm:gap-8 overflow-x-auto hide-scrollbar">
+        <div className="max-w-7xl mx-auto px-5 sm:px-4 safe-left safe-right py-3 sm:py-4 flex items-center gap-6 sm:gap-8 overflow-x-auto nav-scrollbar">
           <Link
             to="/"
-            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
+            className={`shrink-0 text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
               location.pathname === '/' ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
             } transition-colors`}
           >
@@ -29,7 +29,7 @@ export default function Layout() {
           </Link>
           <Link
             to="/albums"
-            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
+            className={`shrink-0 text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
               location.pathname.startsWith('/albums') ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
             } transition-colors`}
           >
@@ -37,7 +37,7 @@ export default function Layout() {
           </Link>
           <Link
             to="/map"
-            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
+            className={`shrink-0 text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
               location.pathname === '/map' ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
             } transition-colors`}
           >
@@ -45,7 +45,7 @@ export default function Layout() {
           </Link>
           <Link
             to="/tags"
-            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
+            className={`shrink-0 text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
               location.pathname === '/tags' ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
             } transition-colors`}
           >
@@ -53,7 +53,7 @@ export default function Layout() {
           </Link>
           <Link
             to="/timeline"
-            className={`text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
+            className={`shrink-0 text-sm tracking-wider uppercase py-1 touch-target flex items-center whitespace-nowrap ${
               location.pathname === '/timeline' ? 'text-white' : 'text-neutral-500 hover:text-white active:text-white'
             } transition-colors`}
           >
@@ -61,7 +61,7 @@ export default function Layout() {
           </Link>
 
           {/* Search */}
-          <div className="ml-auto flex items-center">
+          <div className="ml-auto shrink-0 flex items-center">
             {searchOpen ? (
               <form onSubmit={handleSearch} className="flex items-center">
                 <input
