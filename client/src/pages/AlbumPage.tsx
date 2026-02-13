@@ -62,18 +62,19 @@ export default function AlbumPage() {
   const [searchParams] = useSearchParams();
   const imageParam = searchParams.get('image');
 
-  const [sortOption, setSortOption] = useState<SortOption>('date-desc');
-
   const { data, loading, error, refetch } = useAlbum(path);
   const album = data as AlbumDetail | undefined;
+
+  const [sortOption, setSortOption] = useState<SortOption>((album?.defaultSort as SortOption) || 'date-desc');
+
   const images = album?.images || [];
   const sortedImages = useMemo(() => sortImages(images, sortOption), [images, sortOption]);
   const lightbox = useLightbox(sortedImages);
 
-  // Reset sort when navigating to a different album
+  // Reset sort when navigating to a different album (use album's default if set)
   useEffect(() => {
-    setSortOption('date-desc');
-  }, [path]);
+    setSortOption((album?.defaultSort as SortOption) || 'date-desc');
+  }, [path, album?.defaultSort]);
 
   // Auto-open lightbox when ?image= param is present
   useEffect(() => {

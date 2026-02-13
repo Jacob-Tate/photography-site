@@ -376,4 +376,40 @@ function UploadUtils.toggleTripDays(serverUrl, apiKey, albumPath)
   return data.tripDays
 end
 
+function UploadUtils.getSort(serverUrl, apiKey, albumPath)
+  local url = serverUrl .. '/api/manage/sort?albumPath=' .. urlencode(albumPath)
+  local headers = {
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.get(url, headers)
+
+  if not result or (hdrs and hdrs.status and hdrs.status >= 400) then
+    return 'date-desc'
+  end
+
+  local success, data = pcall(json_decode, result)
+  if not success or not data then
+    return 'date-desc'
+  end
+
+  return data.sort or 'date-desc'
+end
+
+function UploadUtils.setSort(serverUrl, apiKey, albumPath, sort)
+  local url = serverUrl .. '/api/manage/sort'
+  local body = json_encode({ albumPath = albumPath, sort = sort or 'date-desc' })
+  local headers = {
+    { field = 'Content-Type', value = 'application/json' },
+    { field = 'X-API-Key', value = apiKey },
+  }
+
+  local result, hdrs = LrHttp.post(url, body, headers)
+
+  if not result then return false, 'Network error' end
+  if hdrs and hdrs.status and hdrs.status >= 400 then return false, 'Failed to set sort' end
+
+  return true
+end
+
 return UploadUtils

@@ -251,6 +251,13 @@ function provider.updateCollectionSettings(publishSettings, info)
           LrDialogs.message('Trip Days Error', err3 or 'Could not update trip days mode', 'warning')
         end
       end
+
+      -- Update default sort
+      local sortValue = settings.defaultSort or 'date-desc'
+      local ok4, err4 = UploadUtils.setSort(serverUrl, apiKey, destination, sortValue)
+      if not ok4 then
+        LrDialogs.message('Sort Error', err4 or 'Could not update default sort', 'warning')
+      end
     end
   end)
 end
@@ -304,6 +311,17 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
       LrTasks.startAsyncTask(function()
         local tripDays = UploadUtils.getTripDays(publishSettings.serverUrl, publishSettings.apiKey, settings.destination)
         settings.tripDays = tripDays
+      end)
+    end
+  end
+
+  if not settings.defaultSort then
+    settings.defaultSort = 'date-desc'
+    -- Fetch current sort from server
+    if publishSettings.serverUrl and publishSettings.apiKey and settings.destination then
+      LrTasks.startAsyncTask(function()
+        local sort = UploadUtils.getSort(publishSettings.serverUrl, publishSettings.apiKey, settings.destination)
+        settings.defaultSort = sort
       end)
     end
   end
@@ -374,6 +392,23 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
           text_color = import 'LrColor'(0.6, 0.6, 0.6),
         },
       }
+    },
+
+    f:row {
+      f:static_text {
+        title = 'Default Sort:',
+        alignment = 'right',
+      },
+      f:popup_menu {
+        value = bind 'defaultSort',
+        width_in_chars = 20,
+        items = {
+          { title = 'Date taken (newest)', value = 'date-desc' },
+          { title = 'Date taken (oldest)', value = 'date-asc' },
+          { title = 'Filename (A→Z)', value = 'filename-asc' },
+          { title = 'Filename (Z→A)', value = 'filename-desc' },
+        },
+      },
     }
   }
 end

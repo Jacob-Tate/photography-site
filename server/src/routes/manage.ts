@@ -405,4 +405,74 @@ router.get('/tripdays', apiKeyAuth, (req, res) => {
   res.json({ tripDays: fs.existsSync(tripDaysFile) });
 });
 
+// Valid sort options (must match client SortOption type)
+const VALID_SORT_OPTIONS = ['filename-asc', 'filename-desc', 'date-desc', 'date-asc'];
+
+// POST /api/manage/sort - Set default sort for an album (API key required)
+router.post('/sort', apiKeyAuth, (req, res) => {
+  const { albumPath, sort } = req.body;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const sortFile = path.join(resolvedDir, 'sort.txt');
+
+  try {
+    if (sort && sort.trim() !== '' && sort.trim() !== 'date-desc') {
+      if (!VALID_SORT_OPTIONS.includes(sort.trim())) {
+        res.status(400).json({ error: 'Invalid sort option' });
+        return;
+      }
+      fs.mkdirSync(resolvedDir, { recursive: true });
+      fs.writeFileSync(sortFile, sort.trim(), 'utf-8');
+    } else {
+      // date-desc is the default, no file needed
+      if (fs.existsSync(sortFile)) {
+        fs.unlinkSync(sortFile);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Sort update error:', err);
+    res.status(500).json({ error: 'Failed to update sort' });
+  }
+});
+
+// GET /api/manage/sort - Get default sort for an album (API key required)
+router.get('/sort', apiKeyAuth, (req, res) => {
+  const albumPath = req.query.albumPath as string;
+
+  if (!albumPath) {
+    res.status(400).json({ error: 'albumPath is required' });
+    return;
+  }
+
+  const resolvedDir = path.resolve(config.photosDir, albumPath);
+
+  if (!resolvedDir.startsWith(config.photosDir)) {
+    res.status(403).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const sortFile = path.join(resolvedDir, 'sort.txt');
+  let sort = 'date-desc';
+  if (fs.existsSync(sortFile)) {
+    const content = fs.readFileSync(sortFile, 'utf-8').trim();
+    if (VALID_SORT_OPTIONS.includes(content)) {
+      sort = content;
+    }
+  }
+  res.json({ sort });
+});
+
 export default router;

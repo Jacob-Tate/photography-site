@@ -72,6 +72,8 @@ export interface AlbumDetail {
   imageCount: number;
   /** When true, photos should be grouped by day based on EXIF dateTaken */
   tripDays?: boolean;
+  /** Default sort order for this album */
+  defaultSort?: string;
 }
 
 export interface GroupDetail {

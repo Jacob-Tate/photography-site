@@ -27,6 +27,19 @@ function hasTripDays(albumDir: string): boolean {
   return fs.existsSync(path.join(albumDir, 'trip_days.txt'));
 }
 
+const VALID_SORT_OPTIONS = ['filename-asc', 'filename-desc', 'date-desc', 'date-asc'];
+
+function getDefaultSort(albumDir: string): string | undefined {
+  const sortFile = path.join(albumDir, 'sort.txt');
+  if (fs.existsSync(sortFile)) {
+    const content = fs.readFileSync(sortFile, 'utf-8').trim();
+    if (VALID_SORT_OPTIONS.includes(content)) {
+      return content;
+    }
+  }
+  return undefined;
+}
+
 // GET /api/albums - album tree
 router.get('/', async (_req, res) => {
   try {
@@ -91,6 +104,7 @@ router.get('/*', async (req, res) => {
       const imageFiles = listImageFiles(resolved);
       const coverFilename = getCoverImage(resolved, imageFiles);
       const tripDays = hasTripDays(resolved);
+      const defaultSort = getDefaultSort(resolved);
 
       recordAlbumView(albumPath);
       if (req.ip) recordIP(req.ip);
@@ -107,6 +121,7 @@ router.get('/*', async (req, res) => {
         readme: readme ? await renderMarkdown(readme, albumPath) : undefined,
         imageCount: images.length,
         tripDays,
+        defaultSort,
       });
     } else if (hasSubDirs) {
       // It's a group

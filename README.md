@@ -96,6 +96,7 @@ photos/
 - Add a `.md` file with the same name as an image (e.g. `DSC1234.md` next to `DSC1234.jpg`) for a caption shown in the lightbox
 - Thumbnails are generated automatically on first access
 - Albums with date-prefixed names (`YYYYMMDD`, e.g. `20250115_pax_east`) are sorted newest-first
+- Add a `sort.txt` file containing a sort option to set the default sort order for an album (`date-desc`, `date-asc`, `filename-asc`, `filename-desc`)
 
 ## Lightbox Filmstrip
 
@@ -172,6 +173,7 @@ photos/
 | `/api/manage/password` | Set or remove an album password (API key required) |
 | `/api/manage/cover` | Set or remove an album cover image (API key required) |
 | `/api/manage/tripdays` | Toggle trip days mode for an album |
+| `/api/manage/sort` | Set or get default sort order for an album |
 
 ## Lightroom Plugin
 
@@ -182,6 +184,7 @@ Features:
 - Sync album structure from the server with "Sync Albums Now"
 - Set or remove album passwords from the album settings dialog
 - Set an album cover image via Library > Plugin Extras > Set as Cover Image
+- Set the default sort order for an album from the album settings dialog
 - Delete photos from the server when removing them from a published collection
 
 See the plugin directory for installation instructions.
