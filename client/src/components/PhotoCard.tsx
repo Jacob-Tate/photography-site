@@ -12,13 +12,14 @@ interface PhotoCardProps {
   onClick: () => void;
   focused?: boolean;
   rowSpan?: number;
+  href?: string;
 }
 
-const PhotoCard = forwardRef<HTMLDivElement, PhotoCardProps>(function PhotoCard({ image, onClick, focused, rowSpan }, forwardedRef) {
+const PhotoCard = forwardRef<HTMLElement, PhotoCardProps>(function PhotoCard({ image, onClick, focused, rowSpan, href }, forwardedRef) {
   const [loaded, setLoaded] = useState(false);
   const [visible, setVisible] = useState(false);
-  const internalRef = useRef<HTMLDivElement>(null);
-  const ref = (forwardedRef as React.RefObject<HTMLDivElement>) || internalRef;
+  const internalRef = useRef<HTMLAnchorElement>(null);
+  const ref = (forwardedRef as React.RefObject<HTMLElement>) || internalRef;
 
   useEffect(() => {
     const el = (ref as React.RefObject<HTMLDivElement>).current;
@@ -38,12 +39,22 @@ const PhotoCard = forwardRef<HTMLDivElement, PhotoCardProps>(function PhotoCard(
     return () => observer.disconnect();
   }, []);
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Left-click: prevent navigation, open lightbox inline
+    if (e.button === 0) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
-    <div
-      ref={ref as React.RefObject<HTMLDivElement>}
+    <a
+      ref={ref as any}
+      href={href}
       className={`cursor-pointer group relative overflow-hidden rounded-sm${focused ? ' ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
       style={rowSpan ? { gridRowEnd: `span ${rowSpan}` } : undefined}
-      onClick={onClick}
+      onClick={handleClick}
+      draggable={false}
     >
       {visible && (
         <img
@@ -68,7 +79,7 @@ const PhotoCard = forwardRef<HTMLDivElement, PhotoCardProps>(function PhotoCard(
           )}
         </div>
       )}
-    </div>
+    </a>
   );
 });
 

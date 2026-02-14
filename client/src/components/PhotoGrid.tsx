@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useCallback, useRef, createRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ImageInfo } from '../api/client';
 import PhotoCard from './PhotoCard';
 
@@ -11,14 +12,15 @@ interface PhotoGridProps {
 }
 
 export default function PhotoGrid({ images, onPhotoClick, lightboxOpen }: PhotoGridProps) {
+  const location = useLocation();
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-  const cardRefs = useRef<React.RefObject<HTMLDivElement>[]>([]);
+  const cardRefs = useRef<React.RefObject<HTMLElement>[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<{ colWidth: number; gap: number }>({ colWidth: 0, gap: 0 });
 
   // Keep refs array in sync with images
   if (cardRefs.current.length !== images.length) {
-    cardRefs.current = images.map((_, i) => cardRefs.current[i] || createRef<HTMLDivElement>());
+    cardRefs.current = images.map((_, i) => cardRefs.current[i] || createRef<HTMLElement>());
   }
 
   // Measure column width and gap from the live grid so row spans match actual layout
@@ -110,6 +112,7 @@ export default function PhotoGrid({ images, onPhotoClick, lightboxOpen }: PhotoG
           onClick={() => onPhotoClick(index)}
           focused={focusedIndex === index}
           rowSpan={getRowSpan(image)}
+          href={`${location.pathname}?image=${encodeURIComponent(image.filename)}`}
         />
       ))}
     </div>
