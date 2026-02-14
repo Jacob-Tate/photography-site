@@ -12,6 +12,7 @@ A self-hosted photography portfolio and gallery application with album managemen
 - Trip Days mode for grouping photos by day (travel/hikes)
 - Keyword search across all images
 - Tag cloud showing all keywords sized by frequency
+- Timeline view showing all photos chronologically grouped by month
 - Stats dashboard with gear usage, shooting times, and storage overview
 - Shareable links for albums and individual images
 - Download individual images or full albums as ZIP
@@ -64,7 +65,10 @@ The app will be available at `http://localhost`.
 cd server && npm install
 cd ../client && npm install
 
-# Run both server and client
+# Run both server and client concurrently (from project root)
+npm run dev                  # starts server (:3000) and client (:5173) together
+
+# Or run individually
 cd server && npm run dev     # runs on :3000
 cd client && npm run dev     # runs on :5173 with proxy to :3000
 ```
@@ -81,6 +85,9 @@ photos/
       README.md       # Optional album description (markdown)
       password.txt    # Optional, protects the album with a password
       cover.txt       # Optional, filename of the album cover image
+      sort.txt        # Optional, default sort order
+      trip_days.txt   # Optional, enables day-by-day grouping
+      ignorestats.txt # Optional, excludes album from stats
     group-name/       # A group containing multiple albums
       sub-album/
         image.jpg
@@ -97,6 +104,7 @@ photos/
 - Thumbnails are generated automatically on first access
 - Albums with date-prefixed names (`YYYYMMDD`, e.g. `20250115_pax_east`) are sorted newest-first
 - Add a `sort.txt` file containing a sort option to set the default sort order for an album (`date-desc`, `date-asc`, `filename-asc`, `filename-desc`)
+- Add an `ignorestats.txt` file to exclude an album from stats calculations
 
 ## Lightbox Filmstrip
 
@@ -174,6 +182,10 @@ photos/
 | `/api/manage/cover` | Set or remove an album cover image (API key required) |
 | `/api/manage/tripdays` | Toggle trip days mode for an album |
 | `/api/manage/sort` | Set or get default sort order for an album |
+| `/api/manage/readme` | Get or set album README (API key required) |
+| `/api/manage/caption` | Get or set image caption (API key required) |
+| `/api/manage/ignorestats` | Toggle stats exclusion for an album |
+| `/api/timeline` | Photo timeline grouped by month |
 
 ## Lightroom Plugin
 
@@ -184,10 +196,10 @@ Features:
 - Sync album structure from the server with "Sync Albums Now"
 - Set or remove album passwords from the album settings dialog
 - Set an album cover image via Library > Plugin Extras > Set as Cover Image
+- Edit album README via Library > Plugin Extras > Edit Album Readme
+- Edit photo captions via Library > Plugin Extras > Edit Photo Caption
 - Set the default sort order for an album from the album settings dialog
 - Delete photos from the server when removing them from a published collection
-
-See the plugin directory for installation instructions.
 
 ## Configuration
 
