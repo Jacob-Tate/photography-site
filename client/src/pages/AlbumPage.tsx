@@ -83,7 +83,7 @@ export default function AlbumPage() {
     if (index !== -1) {
       lightbox.open(index);
     }
-  }, [imageParam, images.length]);
+  }, [imageParam, sortedImages]);
 
   if (loading) {
     return (
