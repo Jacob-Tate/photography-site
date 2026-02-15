@@ -56,15 +56,15 @@ function isMediaFile(filename: string): boolean {
   return MEDIA_EXTENSIONS.includes(path.extname(filename).toLowerCase());
 }
 
-function formatAlbumName(dirname: string): string {
+export function formatAlbumName(dirname: string): string {
   return dirname.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function gcd(a: number, b: number): number {
+export function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
 }
 
-function formatAspectRatio(width: number, height: number): string {
+export function formatAspectRatio(width: number, height: number): string {
   const divisor = gcd(width, height);
   const w = width / divisor;
   const h = height / divisor;
@@ -394,7 +394,7 @@ function hasSubdirectories(dir: string): boolean {
 }
 
 // Sort entries: date-prefixed names (YYYYMMDD) sort newest-first, others alphabetically
-function albumSort(a: string, b: string): number {
+export function albumSort(a: string, b: string): number {
   const datePattern = /^\d{8}/;
   const aIsDate = datePattern.test(a);
   const bIsDate = datePattern.test(b);

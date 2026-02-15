@@ -5,3 +5,6 @@ photos/
 *.log
 .thumbnails/
 .DS_Store
+playwright-report/
+test-results/
+blob-report/
