@@ -4,7 +4,7 @@ import fs from 'fs';
 import { renderMarkdown } from '../services/markdown';
 import { scanAlbums, scanAlbumImages, getAlbumReadme, getAlbumDir, isHiddenDir, listImageFiles, getCoverImage } from '../services/scanner';
 import { getAlbumPassword, isAlbumUnlocked } from '../services/password';
-import { ALBUMS_DIR, IMAGE_EXTENSIONS } from '../config';
+import { ALBUMS_DIR, MEDIA_EXTENSIONS } from '../config';
 import { recordAlbumView, recordIP } from '../services/analytics';
 
 const router = Router();
@@ -77,7 +77,7 @@ router.get('/*', async (req, res) => {
 
     // Check if this is a group (has subdirectories with images) or album (has images directly)
     const entries = fs.readdirSync(resolved);
-    const hasImages = entries.some(f => IMAGE_EXTENSIONS.includes(path.extname(f).toLowerCase()));
+    const hasImages = entries.some(f => MEDIA_EXTENSIONS.includes(path.extname(f).toLowerCase()));
     const hasSubDirs = entries.some(f => {
       const full = path.join(resolved, f);
       return fs.statSync(full).isDirectory() && !isHiddenDir(f);
@@ -94,7 +94,7 @@ router.get('/*', async (req, res) => {
           path: albumPath,
           hasPassword: true,
           needsPassword: true,
-          imageCount: entries.filter(f => IMAGE_EXTENSIONS.includes(path.extname(f).toLowerCase())).length,
+          imageCount: entries.filter(f => MEDIA_EXTENSIONS.includes(path.extname(f).toLowerCase())).length,
         });
         return;
       }
@@ -135,7 +135,7 @@ router.get('/*', async (req, res) => {
         .map(sub => {
           const subDir = path.join(resolved, sub);
           const subImages = fs.readdirSync(subDir).filter(f =>
-            IMAGE_EXTENSIONS.includes(path.extname(f).toLowerCase())
+            MEDIA_EXTENSIONS.includes(path.extname(f).toLowerCase())
           ).sort();
           const subPath = `${albumPath}/${sub}`;
           const subHasPassword = fs.existsSync(path.join(subDir, 'password.txt'));
