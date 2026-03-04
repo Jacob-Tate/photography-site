@@ -2,6 +2,31 @@
 
 A self-hosted photography portfolio and gallery application with album management, interactive map view, keyword search, and a Lightroom upload plugin.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="screenshots/landing_page.png" alt="Portfolio — masonry grid gallery"/><br/><em>Portfolio — masonry grid gallery</em></td>
+    <td><img src="screenshots/album_page.png" alt="Albums — listing with recent changes"/><br/><em>Albums — listing with recent changes</em></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/album.png" alt="Album — hero banner, description, and photo grid"/><br/><em>Album — hero banner, description, and photo grid</em></td>
+    <td><img src="screenshots/lightbox_with_exif.png" alt="Lightbox — full-screen viewer with EXIF panel, histogram, and filmstrip"/><br/><em>Lightbox — full-screen viewer with EXIF panel, histogram, and filmstrip</em></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/map.png" alt="Map — global view of all geotagged photos"/><br/><em>Map — global view of all geotagged photos</em></td>
+    <td><img src="screenshots/map_album.png" alt="Photo Trail — album route overlay with distance and duration"/><br/><em>Photo Trail — album route overlay with distance and duration</em></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/tags.png" alt="Tags — keyword cloud sized by frequency"/><br/><em>Tags — keyword cloud sized by frequency</em></td>
+    <td><img src="screenshots/timeline.png" alt="Timeline — all photos grouped chronologically by month"/><br/><em>Timeline — all photos grouped chronologically by month</em></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/export_social.png" alt="Export for Social Media — platform-specific crop presets"/><br/><em>Export for Social Media — platform-specific crop presets</em></td>
+    <td></td>
+  </tr>
+</table>
+
 ## Features
 
 - Portfolio gallery with masonry layout and full-screen lightbox viewer with filmstrip navigation
