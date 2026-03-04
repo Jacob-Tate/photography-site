@@ -302,97 +302,73 @@ export default function Lightbox({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top bar - hidden on mobile when tapped */}
+      {/* Top bar - hidden when tapped */}
       <div
-        className={`absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 pb-4 bg-gradient-to-b from-black/50 to-transparent transition-opacity duration-200 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
+        className={`absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/50 to-transparent transition-opacity duration-200 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onTouchStart={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        {/* Zoom controls - hidden on small screens */}
-        <div className="hidden sm:flex items-center gap-2">
-          <button
-            onClick={() => handleZoom(-0.5)}
-            className="p-2 text-white/70 hover:text-white transition-colors"
-            title="Zoom out (-)"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-            </svg>
-          </button>
-          <span className="text-white/70 text-sm min-w-[3rem] text-center">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            onClick={() => handleZoom(0.5)}
-            className="p-2 text-white/70 hover:text-white transition-colors"
-            title="Zoom in (+)"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-          {isZoomed && (
+        {/* Spacer = env(safe-area-inset-top) — solo class so nothing overrides it */}
+        <div className="safe-top" />
+        <div className="flex items-center justify-between px-4 pb-4 pt-2">
+          {/* Zoom controls - desktop only */}
+          <div className="hidden sm:flex items-center gap-2">
             <button
-              onClick={() => { setZoom(1); setPosition({ x: 0, y: 0 }); }}
-              className="ml-2 px-2 py-1 text-xs text-white/70 hover:text-white border border-white/30 rounded transition-colors"
+              onClick={() => handleZoom(-0.5)}
+              className="p-2 text-white/70 hover:text-white transition-colors"
+              title="Zoom out (-)"
             >
-              Reset
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+              </svg>
             </button>
-          )}
+            <span className="text-white/70 text-sm min-w-[3rem] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              onClick={() => handleZoom(0.5)}
+              className="p-2 text-white/70 hover:text-white transition-colors"
+              title="Zoom in (+)"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+            {isZoomed && (
+              <button
+                onClick={() => { setZoom(1); setPosition({ x: 0, y: 0 }); }}
+                className="ml-2 px-2 py-1 text-xs text-white/70 hover:text-white border border-white/30 rounded transition-colors"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          {/* Mobile: empty spacer for balance */}
+          <div className="sm:hidden" />
+
+          {/* Right controls */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ShareButton type="image" targetPath={image.path} compact />
+            {images && images.length > 1 && !hideMapButton && (
+              <MapTrailButton images={images} currentImage={image} compact />
+            )}
+            <SocialExportButton
+              onClick={() => setShowSocialExport(!showSocialExport)}
+              isActive={showSocialExport}
+            />
+            <DownloadButton url={image.downloadUrl} filename={image.filename} />
+            <button
+              onClick={onClose}
+              className="p-3 sm:p-2 text-white/70 hover:text-white transition-colors touch-target"
+              aria-label="Close"
+            >
+              <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
-
-        {/* Mobile: empty left side (actions are in the bottom bar) */}
-        <div className="sm:hidden" />
-
-        {/* Right controls - desktop only; mobile uses the bottom action bar */}
-        <div className="hidden sm:flex items-center gap-2">
-          <ShareButton type="image" targetPath={image.path} compact />
-          {images && images.length > 1 && !hideMapButton && (
-            <MapTrailButton images={images} currentImage={image} compact />
-          )}
-          <SocialExportButton
-            onClick={() => setShowSocialExport(!showSocialExport)}
-            isActive={showSocialExport}
-          />
-          <DownloadButton url={image.downloadUrl} filename={image.filename} />
-          <button
-            onClick={onClose}
-            className="p-2 text-white/70 hover:text-white transition-colors"
-            aria-label="Close"
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile bottom action bar - shown on small screens only */}
-      <div
-        className={`absolute left-0 right-0 z-20 sm:hidden flex items-center justify-around px-2 pt-4 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-200 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${showFilmstrip && !isZoomed ? 'bottom-[72px]' : 'bottom-0'}`}
-        style={!(showFilmstrip && !isZoomed) ? { paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' } : { paddingBottom: '0.5rem' }}
-        onTouchStart={(e) => e.stopPropagation()}
-        onTouchEnd={(e) => e.stopPropagation()}
-      >
-        <ShareButton type="image" targetPath={image.path} compact />
-        {images && images.length > 1 && !hideMapButton && (
-          <MapTrailButton images={images} currentImage={image} compact />
-        )}
-        <SocialExportButton
-          onClick={() => setShowSocialExport(!showSocialExport)}
-          isActive={showSocialExport}
-        />
-        <DownloadButton url={image.downloadUrl} filename={image.filename} />
-        <button
-          onClick={onClose}
-          className="p-3 text-white/70 hover:text-white transition-colors touch-target"
-          aria-label="Close"
-        >
-          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </div>
 
       {/* Social Export Panel */}
