@@ -456,7 +456,7 @@ export default function Lightbox({
 
       {/* Zoom/swipe hint */}
       {isLoaded && !isZoomed && showControls && !image.exif && !isVideo && (
-        <div className="absolute bottom-4 safe-bottom left-1/2 -translate-x-1/2 text-white/40 text-sm pointer-events-none text-center px-4">
+        <div className="absolute bottom-[calc(1rem+var(--safe-area-bottom))] left-1/2 -translate-x-1/2 text-white/40 text-sm pointer-events-none text-center px-4">
           <span className="hidden sm:inline">Scroll or double-click to zoom</span>
           <span className="sm:hidden">Swipe to navigate • Pinch to zoom</span>
         </div>
@@ -465,7 +465,7 @@ export default function Lightbox({
       {/* Video metadata panel */}
       {isLoaded && showControls && isVideo && (
         <div
-          className={`absolute right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] ${showFilmstrip ? 'bottom-[88px]' : 'bottom-4 safe-bottom'}`}
+          className={`absolute right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] ${showFilmstrip ? 'bottom-[88px]' : 'bottom-[calc(1rem+var(--safe-area-bottom))]'}`}
           onClick={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
         >
@@ -483,7 +483,7 @@ export default function Lightbox({
       {/* Caption panel */}
       {isLoaded && showControls && !isZoomed && image.caption && (
         <div
-          className={`absolute left-4 right-4 sm:right-auto z-20 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-white/90 sm:max-w-[340px] max-h-[25vh] sm:max-h-[200px] overflow-y-auto prose prose-invert prose-sm top-[calc(var(--safe-area-top)+5rem)] sm:top-auto bottom-auto ${showFilmstrip ? 'sm:bottom-[88px]' : 'sm:bottom-4 safe-bottom'}`}
+          className={`absolute left-4 right-4 sm:right-auto z-20 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-white/90 sm:max-w-[340px] max-h-[25vh] sm:max-h-[200px] overflow-y-auto prose prose-invert prose-sm top-[calc(var(--safe-area-top)+5rem)] sm:top-auto bottom-auto ${showFilmstrip ? 'sm:bottom-[88px]' : 'sm:bottom-[calc(1rem+var(--safe-area-bottom))]'}`}
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
@@ -496,7 +496,7 @@ export default function Lightbox({
       {/* EXIF data panel - hidden for videos */}
       {isLoaded && showControls && image.exif && !isVideo && (
         <div
-          className={`absolute right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] cursor-pointer select-none ${showFilmstrip && !isZoomed ? 'bottom-[88px]' : 'bottom-4 safe-bottom'}`}
+          className={`absolute right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/90 max-w-[340px] cursor-pointer select-none ${showFilmstrip && !isZoomed ? 'bottom-[88px]' : 'bottom-[calc(1rem+var(--safe-area-bottom))]'}`}
           onClick={(e) => { e.stopPropagation(); setShowFullExif(!showFullExif); }}
           onTouchEnd={(e) => e.stopPropagation()}
         >
