@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import sharp from 'sharp';
+import sharp, { type Sharp } from 'sharp';
 import { SOCIAL_EXPORTS_DIR } from '../config';
 
 export interface SocialPreset {
@@ -49,7 +49,7 @@ export async function generateSocialExport(sourcePath: string, preset: SocialPre
     throw new Error('Could not read image dimensions');
   }
 
-  let pipeline: sharp.Sharp;
+  let pipeline: Sharp;
 
   if (preset.crop && preset.height !== null) {
     // Center crop mode: extract center region at target aspect ratio, then resize
