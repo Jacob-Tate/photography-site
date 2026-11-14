@@ -63,6 +63,17 @@ describe('buildTileUrl', () => {
     expect(buildTileUrl('a b&c')).toMatch(/\?key=a%20b%26c$/);
   });
 
+  it('strips surrounding quotes and whitespace from the key', () => {
+    const expected = 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=abc123';
+    expect(buildTileUrl('"abc123"')).toBe(expected);
+    expect(buildTileUrl("'abc123'")).toBe(expected);
+    expect(buildTileUrl('  abc123 \n')).toBe(expected);
+  });
+
+  it('treats a key of only quotes as unset', () => {
+    expect(buildTileUrl('""')).not.toContain('?key=');
+  });
+
   it('omits the key parameter when no key is configured', () => {
     expect(buildTileUrl('')).not.toContain('?key=');
   });

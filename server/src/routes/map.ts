@@ -14,7 +14,17 @@ const CARTO_TILE_URL = 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{
  * The key is shipped to browsers by design, so restrict it to your domain in the CARTO dashboard.
  */
 export function buildTileUrl(apiKey: string): string {
-  return apiKey ? `${CARTO_TILE_URL}?key=${encodeURIComponent(apiKey)}` : CARTO_TILE_URL;
+  const key = normalizeKey(apiKey);
+  return key ? `${CARTO_TILE_URL}?key=${encodeURIComponent(key)}` : CARTO_TILE_URL;
+}
+
+/**
+ * Strips whitespace and one pair of surrounding quotes. Compose's list-style
+ * `environment:` entries keep quotes literally (CARTO_API_KEY="abc" -> "abc"),
+ * which CARTO rejects with a watermark tile.
+ */
+function normalizeKey(raw: string): string {
+  return raw.trim().replace(/^(["'])(.*)\1$/, '$2').trim();
 }
 
 let warnedMissingKey = false;
