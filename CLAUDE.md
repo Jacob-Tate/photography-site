@@ -85,6 +85,7 @@ Vite proxies `/api/*` to `http://localhost:3000` during development.
 |---|---|---|
 | `SESSION_SECRET` | Yes (prod) | Session encryption key |
 | `API_KEY` | Yes (prod) | API key for uploads and management |
+| `CARTO_API_KEY` | No | CARTO basemap key; served to the client via `GET /api/map/tiles` (watermarked tiles without it) |
 | `PORT` | No (default: 3000) | Server port |
 | `PHOTOS_DIR` | No (default: ./photos) | Path to photos directory |
 

@@ -131,6 +131,12 @@ export async function fetchMapImages(): Promise<{ images: MapImage[] }> {
   return res.json();
 }
 
+export async function fetchMapTileUrl(): Promise<{ url: string }> {
+  const res = await fetch('/api/map/tiles');
+  if (!res.ok) throw new Error(`Failed to fetch map tile config: ${res.status}`);
+  return res.json();
+}
+
 export interface SearchResult extends ImageInfo {
   albumName?: string;
   albumPath?: string;

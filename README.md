@@ -69,9 +69,10 @@ A self-hosted photography portfolio and gallery application with album managemen
 ```
 SESSION_SECRET=your-secret-here
 API_KEY=your-api-key-here
+CARTO_API_KEY=your-carto-key
 ```
 
-Generate secure values with `openssl rand -hex 32`.
+Generate secure values with `openssl rand -hex 32`. Get a free `CARTO_API_KEY` at https://carto.com/basemaps/apikey (used for map tiles).
 
 3. Add photos to the `photos/` directory (see structure below)
 
@@ -234,6 +235,7 @@ Features:
 | `PHOTOS_DIR` | `./photos` | Path to photos directory |
 | `SESSION_SECRET` | - | Session encryption key (required in production) |
 | `API_KEY` | - | API key for upload authentication |
+| `CARTO_API_KEY` | - | CARTO basemap key for map tiles. Without it, tiles show an "API KEY REQUIRED" watermark. This key is sent to browsers, so restrict it to your domain in the CARTO dashboard. |
 
 ## Nginx
 
