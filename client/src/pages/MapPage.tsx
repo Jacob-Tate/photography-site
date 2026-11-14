@@ -8,6 +8,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 import { fetchMapImages, MapImage } from '../api/client';
 import Lightbox from '../components/Lightbox';
+import { useTileUrl, TILE_ATTRIBUTION } from '../hooks/useTileUrl';
 
 // Fix default marker icons for Leaflet
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -144,6 +145,7 @@ function FitBounds({ images, focusLat, focusLon }: { images: MapImage[]; focusLa
 }
 
 export default function MapPage() {
+  const tileUrl = useTileUrl();
   const [searchParams] = useSearchParams();
   const focusLat = searchParams.get('lat') ? Number(searchParams.get('lat')) : undefined;
   const focusLon = searchParams.get('lon') ? Number(searchParams.get('lon')) : undefined;
@@ -230,10 +232,12 @@ export default function MapPage() {
           className="h-full w-full"
           style={{ background: '#1a1a1a' }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          />
+          {tileUrl && (
+            <TileLayer
+              attribution={TILE_ATTRIBUTION}
+              url={tileUrl}
+            />
+          )}
           <MarkerClusterGroup images={images} onMarkerClick={handleMarkerClick} />
           <FitBounds images={images} focusLat={focusLat} focusLon={focusLon} />
         </MapContainer>

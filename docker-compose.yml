@@ -4,6 +4,7 @@ services:
     environment:
       - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
       - API_KEY=${API_KEY:-change-me-in-production}
+      - CARTO_API_KEY=${CARTO_API_KEY:-}
       - PHOTOS_DIR=/app/photos
     volumes:
       - ./photos:/app/photos

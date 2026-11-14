@@ -13,6 +13,7 @@ export const config = {
   photosDir: path.resolve(projectRoot, photosDir),
   sessionSecret: process.env.SESSION_SECRET || 'dev-secret-change-me',
   apiKey: process.env.API_KEY || '',
+  cartoApiKey: process.env.CARTO_API_KEY || '',
   thumbnailMaxWidth: 600,
   thumbnailQuality: 80,
 };

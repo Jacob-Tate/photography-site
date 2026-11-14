@@ -2,8 +2,31 @@ import { Router } from 'express';
 import { scanPortfolio, scanAlbums, scanAlbumImages } from '../services/scanner';
 import { ImageInfo } from '../types';
 import { isStatsIgnored, isPortfolioStatsIgnored } from '../services/ignoreStats';
+import { config } from '../config';
 
 const router = Router();
+
+const CARTO_TILE_URL = 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png';
+
+/**
+ * Builds the basemap tile URL. CARTO requires an API key (sent as ?key=);
+ * without one, tiles render with an "API KEY REQUIRED" watermark.
+ * The key is shipped to browsers by design, so restrict it to your domain in the CARTO dashboard.
+ */
+export function buildTileUrl(apiKey: string): string {
+  return apiKey ? `${CARTO_TILE_URL}?key=${encodeURIComponent(apiKey)}` : CARTO_TILE_URL;
+}
+
+let warnedMissingKey = false;
+
+// GET /api/map/tiles - returns the basemap tile URL template for Leaflet
+router.get('/tiles', (_req, res) => {
+  if (!config.cartoApiKey && !warnedMissingKey) {
+    console.warn('CARTO_API_KEY is not set; map tiles will show an "API KEY REQUIRED" watermark');
+    warnedMissingKey = true;
+  }
+  res.json({ url: buildTileUrl(config.cartoApiKey) });
+});
 
 export interface MapImage extends ImageInfo {
   albumName?: string;

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app';
+import { buildTileUrl } from './map';
 
 describe('GET /api/map', { timeout: 30000 }, () => {
   it('returns 200 with images array', async () => {
@@ -38,5 +39,31 @@ describe('GET /api/map', { timeout: 30000 }, () => {
       (img: { albumPath: string }) => img.albumPath?.includes('test-ignorestats')
     );
     expect(ignoredImages.length).toBe(0);
+  });
+});
+
+describe('GET /api/map/tiles', () => {
+  it('returns a CARTO dark tile URL template with Leaflet placeholders', async () => {
+    const res = await request(app).get('/api/map/tiles');
+
+    expect(res.status).toBe(200);
+    expect(res.body.url).toMatch(/^https:\/\/basemaps\.cartocdn\.com\/rastertiles\/dark_all\//);
+    expect(res.body.url).toContain('{z}/{x}/{y}{r}.png');
+  });
+});
+
+describe('buildTileUrl', () => {
+  it('appends the key as a query parameter when set', () => {
+    expect(buildTileUrl('abc123')).toBe(
+      'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=abc123'
+    );
+  });
+
+  it('URL-encodes the key', () => {
+    expect(buildTileUrl('a b&c')).toMatch(/\?key=a%20b%26c$/);
+  });
+
+  it('omits the key parameter when no key is configured', () => {
+    expect(buildTileUrl('')).not.toContain('?key=');
   });
 });

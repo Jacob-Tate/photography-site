@@ -9,7 +9,9 @@
 #   4. Generate secrets:
 #        echo "SESSION_SECRET=$(openssl rand -hex 32)" > .env
 #        echo "API_KEY=$(openssl rand -hex 32)" >> .env
-#   5. Start: docker compose up -d
+#   5. (Optional) Add a free CARTO basemap key for the map page (https://carto.com/basemaps/apikey):
+#        echo "CARTO_API_KEY=your-carto-key" >> .env
+#   6. Start: docker compose up -d
 #
 # The site will be available at http://localhost
 
@@ -19,6 +21,7 @@ services:
     environment:
       - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET in .env}
       - API_KEY=${API_KEY:?Set API_KEY in .env}
+      - CARTO_API_KEY=${CARTO_API_KEY:-}
       - PHOTOS_DIR=/app/photos
     volumes:
       - ./photos:/app/photos

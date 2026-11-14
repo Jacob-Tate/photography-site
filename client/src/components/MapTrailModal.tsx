@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ImageInfo } from '../api/client';
 import Lightbox from './Lightbox';
+import { useTileUrl, TILE_ATTRIBUTION } from '../hooks/useTileUrl';
 import { groupImagesByDay } from '../utils/tripDays';
 
 // Colors for different days (cycle through these)
@@ -172,6 +173,7 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export default function MapTrailModal({ images, currentImage, onClose }: MapTrailModalProps) {
+  const tileUrl = useTileUrl();
   const modalRef = useRef<HTMLDivElement>(null);
   const [showAllMarkers, setShowAllMarkers] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -356,10 +358,12 @@ export default function MapTrailModal({ images, currentImage, onClose }: MapTrai
             className="h-full w-full"
             style={{ background: '#1a1a1a' }}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            />
+            {tileUrl && (
+              <TileLayer
+                attribution={TILE_ATTRIBUTION}
+                url={tileUrl}
+              />
+            )}
 
             {/* Trail polylines - either single or per-day */}
             {showDaySeparation && hasMultipleDays ? (
