@@ -157,6 +157,8 @@ Click the share button on any album or in the lightbox to copy a shareable link 
 
 Click the Map button on any album or in the lightbox to view geotagged photos on an interactive map with their path/trail drawn connecting shot locations chronologically.
 
+Map tiles come from CARTO and need a free API key: set `CARTO_API_KEY` (see [Configuration](#configuration)). Without it, the map shows an "API KEY REQUIRED" watermark over every tile.
+
 Features:
 - Trail line connecting photos in order of capture time
 - Start (green) and End (red) markers
@@ -200,6 +202,7 @@ photos/
 | `/api/search` | Keyword search |
 | `/api/tags` | Keyword tag cloud data |
 | `/api/map` | Geotagged image data |
+| `/api/map/tiles` | Basemap tile URL template (includes `CARTO_API_KEY` when set) |
 | `/api/stats` | Photography stats and analytics |
 | `/api/auth` | Album password authentication |
 | `/api/upload` | Image upload (LAN only) |
